@@ -10,6 +10,7 @@ To build the deb I ran:
      git clone https://pdfium.googlesource.com/pdfium.git
      cd pdfium
      svn co http://gyp.googlecode.com/svn/trunk build/gyp
+     svn co http://v8.googlecode.com/svn/trunk v8
      svn co https://src.chromium.org/chrome/trunk/deps/third_party/icu46 v8/third_party/icu
      rm -rf .git
      find -type d -name .svn -exec rm {} \;
