@@ -19,4 +19,5 @@ To build the deb I ran:
      tar czf pdfium-0.1+git20150114.tar.gz pdfium-0.1+git20150114
      cd pdfium-0.1+git20150114
      cp ../debian-config ./debian
+     dh_make -c BSD -e nathan@stitt.org -f ../pdfium-0.1+git20150114.tar.gz
      dpkg-buildpackage -us -uc
