@@ -1,0 +1,3 @@
+out/Release/*.a usr/lib/pdfium
+fpdfsdk/include/* usr/include/pdfium/fpdfsdk
+out/Release/pdfium_test usr/bin/pdfium-test

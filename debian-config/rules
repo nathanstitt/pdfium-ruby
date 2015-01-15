@@ -1,0 +1,26 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+NINJAFLAGS=-C out/Release
+
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+        NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+        NINJAFLAGS += -j$(NUMJOBS)
+endif
+
+override_dh_auto_build:
+	export GYP_GENERATORS=ninja
+	./build/gyp_pdfium
+	ninja $(NINJAFLAGS) pdfium_test
+
+override_dh_auto_clean:
+	if [ -d out/Release ]; then ninja $(NINJAFLAGS) -t clean pdfium_test; rm -rf out; fi
+	find -name '*.pyc' -exec rm {} \;
+
+
+override_dh_strip:
+
+%:
+	dh $@
