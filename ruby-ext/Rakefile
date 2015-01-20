@@ -1,0 +1,19 @@
+require "bundler/gem_tasks"
+require 'rake/testtask'
+require 'rdoc/task'
+
+Rake::TestTask.new do |t|
+    t.libs << 'test'
+    t.pattern = "test/*_spec.rb"
+end
+
+require "bundler/gem_tasks"
+
+require "rake/extensiontask"
+Rake::ExtensionTask.new("pdfium_ext") do | ext |
+  ext.source_pattern = "*.cpp"
+end
+
+task :buildtest => :compile do
+    Rake::Task["test"].invoke
+end

@@ -11,6 +11,7 @@ LIBS= -L/usr/lib/pdfium -lpdfium -lbigint -lfreetype -lfpdfdoc -lfpdftext -lform
 -licui18n -licuuc -licudata -lpdfwindow -lfxedit -lfxcodec -lfxcrt -lfpdfdoc -lfpdfapi -lfdrm \
 -lfxge -lfreetype -lpthread
 
+
 clean:
 	rm -rf *o pdfium
 

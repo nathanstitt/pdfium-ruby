@@ -1,0 +1,8 @@
+.bundle
+Gemfile.lock
+*.bundle
+*.so
+*.o
+*.a
+mkmf.log
+ruby-ext/tmpg
