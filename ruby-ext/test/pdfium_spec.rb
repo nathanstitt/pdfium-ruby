@@ -5,8 +5,10 @@ describe PDFium do
 
   it "creates PDF class" do
     assert PDFium::Pdf
-    pdf = PDFium::Pdf.open("test.pdf")
-    refute_nil pdf
+    pdf = PDFium::Pdf.new("test.pdf")
+    assert pdf.test
+#    pdf = PDFium::Pdf.open("test.pdf")
+#    pdf.test
     #refute pdf.valid?
   end
 
