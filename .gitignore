@@ -6,3 +6,4 @@ Gemfile.lock
 *.a
 mkmf.log
 ruby-ext/tmpg
+c++-test/pdfium
