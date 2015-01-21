@@ -61,24 +61,26 @@ void Unsupported_Handler(UNSUPPORT_INFO*, int type) {
 }
 
 
-static
-Pdf* getPdf(VALUE self) {
+Pdf*
+getPdf(VALUE self) {
   Pdf* p;
   Data_Get_Struct(self, Pdf, p);
   return p;
 }
 
-static
-void wrap_pdf_free(Pdf* p) {
-    printf("GC Free PDF: %016" PRIxPTR "\n", (uintptr_t)p);
-    ruby_xfree(p);
-}
-
 void
-pdf_gc_free(Pdf *pdf) {
+wrap_pdf_free(Pdf* pdf) {
     printf("GC Free PDF: %016" PRIxPTR "\n", (uintptr_t)pdf);
-
+    // we need to call the destructor ourselves since we're using xmalloc and xfree
+    pdf->~Pdf();
+    ruby_xfree(pdf);
 }
+
+// void
+// pdf_gc_free(Pdf *pdf) {
+//     printf("GC Free PDF: %016" PRIxPTR "\n", (uintptr_t)pdf);
+
+// }
 
 void
 pdf_gc_mark(Pdf *pdf){
@@ -87,33 +89,43 @@ pdf_gc_mark(Pdf *pdf){
 
 
 static VALUE wrap_pdf_alloc(VALUE klass) {
-  return Data_Wrap_Struct(klass, NULL, wrap_pdf_free, ruby_xmalloc(sizeof(Pdf)));
+    return Data_Wrap_Struct(klass, NULL, wrap_pdf_free, ruby_xmalloc(sizeof(Pdf)));
 }
 
-static VALUE wrap_pdf_init(VALUE self, VALUE _path) {
-  const char* path = StringValuePtr(_path);
+static VALUE pdf_init(VALUE self, VALUE _path) {
+    const char* path = StringValuePtr(_path);
 
-  Pdf* p = getPdf(self);
-  new (p) Pdf(path);
+    Pdf* p = getPdf(self);
+    new (p) Pdf(path);
 
-  return Qnil;
+    if (!p->isValid()){
+        rb_raise(rb_eRuntimeError, "Unable to parse %s", path);
+    }
+
+    return Qnil;
 }
 
 
-VALUE
-pdf_open(VALUE klass, VALUE path){
-    path = rb_funcall(path, to_s, 0); // call to_s in case the path is a Pathname or something
+// VALUE
+// pdf_open(VALUE klass, VALUE path){
+//     path = rb_funcall(path, to_s, 0); // call to_s in case the path is a Pathname or something
 
-    Pdf *pdf = new Pdf(StringValuePtr(path));
-    printf("Created PDF: %016" PRIxPTR "\n", (uintptr_t)pdf);
+//     Pdf *pdf = new Pdf(StringValuePtr(path));
+//     printf("Created PDF: %016" PRIxPTR "\n", (uintptr_t)pdf);
 
-    VALUE self = Data_Wrap_Struct( rb_pdf, &pdf_gc_mark, &pdf_gc_free, pdf );
-    return self;
-}
+//     VALUE self = Data_Wrap_Struct( rb_pdf, &pdf_gc_mark, &pdf_gc_free, pdf );
+//     return self;
+// }
 
 VALUE
 pdf_test(VALUE klass){
     return INT2FIX(42);
+}
+
+VALUE
+pdf_page_count(VALUE klass){
+    Pdf *pdf = getPdf(klass);
+    return INT2NUM( pdf->pageCount() );
 }
 
 extern "C"
@@ -138,12 +150,10 @@ void Init_pdfium_ext()
     rb_define_alloc_func(rb_pdf, wrap_pdf_alloc);
 
     rb_define_private_method(rb_pdf, "initialize",
-                             reinterpret_cast<VALUE(*)(...)>(wrap_pdf_init), 1);
+                             reinterpret_cast<VALUE(*)(...)>(pdf_init), 1);
 
-    rb_define_singleton_method(rb_pdf, "open",
-                               reinterpret_cast<VALUE(*)(...)>(pdf_open),1);
 
-    rb_define_method(rb_pdf, "test",
-                     reinterpret_cast<VALUE(*)(...)>(pdf_test),0);
+    rb_define_method(rb_pdf, "page_count",
+                     reinterpret_cast<VALUE(*)(...)>(pdf_page_count),0);
 
 }

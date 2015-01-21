@@ -7,6 +7,11 @@ class Pdf {
 
     Pdf(const char* file);
 
+    bool isValid();
+
+    int pageCount();
+
+    ~Pdf();
 
   private:
     FPDF_DOCUMENT _pdf;
