@@ -1,8 +1,8 @@
-require "pdfium/version"
+require_relative "pdfium/version"
 
 
 module PDFium
 
 end
 
-require "pdfium_ext"
+require_relative "pdfium_ext"
