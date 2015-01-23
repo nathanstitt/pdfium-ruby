@@ -1,9 +1,10 @@
 require_relative 'spec_helper'
 require 'tempfile'
 
-def memory
-  `ps -o rss -p #{$$}`.strip.split.last.to_i
-end
+# def memory
+#   `ps -o vsz -p #{$$}`.strip.split.last.to_i
+# end
+# GC.start(full_mark: true, immediate_sweep: true)
 
 describe PDFium do
 
@@ -19,8 +20,6 @@ describe PDFium do
   end
 
   it "counts pages" do
-    puts "Starting Memory: #{memory}"
-
     {
       "S2"        => 1,
       "basicapi"  => 3,
@@ -29,15 +28,13 @@ describe PDFium do
     }.each do | name, pgs |
       pdf = PDFium::Pdf.new( pdf_path(name) )
       assert_equal pgs, pdf.page_count, "#{name} page count is incorrect"
-      puts "before GC #{name} -> #{memory}"
       pdf = nil
-      GC.start(full_mark: true, immediate_sweep: true)
-      puts "after  GC #{name} -> #{memory}"
     end
   end
 
 
-  it "has stuff" do
+  it "warns un unsupported" do
+    pdf = PDFium::Pdf.new( pdf_path("AGreatDayForFreedom_LITE") )
 
   end
 

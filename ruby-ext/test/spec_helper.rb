@@ -1,5 +1,6 @@
 require 'minitest/autorun'
-require 'pdfium'
+require_relative '../lib/pdfium'
+require 'pathname'
 
 class MiniTest::Spec
 
