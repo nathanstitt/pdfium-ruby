@@ -1,0 +1,44 @@
+{
+   onig_search
+   Memcheck:Cond
+   fun:onig_search
+   fun:rb_reg_search
+}
+{
+   is_pointer_to_heap
+   Memcheck:Cond
+   fun:is_pointer_to_heap
+   fun:mark_locations_array
+}
+{
+   gc_mark
+   Memcheck:Value4
+   fun:gc_mark
+}
+{
+   gc_mark
+   Memcheck:Cond
+   fun:gc_mark
+}
+{
+   gc_mark_children
+   Memcheck:Cond
+   fun:gc_mark_children
+}
+{
+   gc_mark_children
+   Memcheck:Value4
+   fun:gc_mark_children
+}
+{
+   mark_locations_array
+   Memcheck:Cond
+   fun:mark_locations_array
+}
+{
+   rb_special_const_p
+   Memcheck:Cond
+   fun:rb_special_const_p
+   fun:gc_mark
+   fun:mark_locations_array
+}
