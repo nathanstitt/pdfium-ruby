@@ -17,3 +17,26 @@ end
 task :buildtest => :compile do
     Rake::Task["test"].invoke
 end
+
+# valgrind and Ruby
+# http://blog.flavorjon.es/2009/06/easily-valgrind-gdb-your-ruby-c.html
+# http://blog.evanweaver.com/2008/02/05/valgrind-and-ruby/
+namespace :test do
+  # partial-loads-ok and undef-value-errors necessary to ignore
+  # spurious (and eminently ignorable) warnings from the ruby
+  # interpreter
+  VALGRIND_BASIC_OPTS = <<-EOS
+ --tool=memcheck
+ --dsymutil=yes \
+ --num-callers=50 --error-limit=no --leak-check=full \
+ --partial-loads-ok=yes --undef-value-errors=no
+  EOS
+
+  SUPRESS = ""# "--suppressions=./valgrind.supp"
+  desc "run test suite under valgrind with basic ruby options"
+  task :valgrind => :compile do
+    cmdline = "valgrind #{SUPRESS} #{VALGRIND_BASIC_OPTS} ruby rake test"
+    puts cmdline
+    system cmdline
+  end
+end
