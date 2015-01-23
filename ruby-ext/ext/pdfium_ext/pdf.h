@@ -2,7 +2,7 @@
 #include "fpdf_ext.h"
 
 class Pdf {
- public:
+  public:
     static void Initialize();
 
     Pdf(const char* file);
@@ -15,5 +15,5 @@ class Pdf {
 
   private:
     FPDF_DOCUMENT _pdf;
-
+    void *mem_leak;
 };

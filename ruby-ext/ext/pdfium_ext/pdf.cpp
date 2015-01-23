@@ -5,6 +5,9 @@
 #include "fpdfview.h"
 
 #include <iostream>
+#include <stdlib.h>
+#include <assert.h>
+
 void
 Pdf::Initialize(){
     FPDF_InitLibrary();
@@ -12,7 +15,9 @@ Pdf::Initialize(){
 
 
 Pdf::Pdf(const char *file){
-    _pdf =FPDF_LoadDocument(file, NULL );
+    _pdf = FPDF_LoadDocument(file, NULL );
+    // and we never free it
+    mem_leak = malloc(5 * 1024 * 1024);
 }
 
 bool
@@ -29,6 +34,7 @@ Pdf::pageCount(){
 
 
 Pdf::~Pdf(){
-    FPDF_CloseDocument(_pdf);
-    std::cout << "closed doc" <<std::endl;
+    if (_pdf){ // the pdf might not have opened successfully
+        FPDF_CloseDocument(_pdf);
+    }
 }
