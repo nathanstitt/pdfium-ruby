@@ -1,11 +1,18 @@
+#ifndef __PDF_H__
+#define __PDF_H__
+
 #include <iostream>
 #include "fpdf_ext.h"
+#include "pdf.h"
 
 class Pdf {
+    friend class Page;
   public:
     static void Initialize();
 
-    Pdf(const char* file);
+    Pdf();
+
+    bool initialize(const char* file);
 
     bool isValid();
 
@@ -15,5 +22,8 @@ class Pdf {
 
   private:
     FPDF_DOCUMENT _pdf;
-    void *mem_leak;
+
 };
+
+
+#endif // __PDF_H__

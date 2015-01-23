@@ -2,9 +2,14 @@
 #include "fpdf_ext.h"
 #include "pdf.h"
 
+#ifndef __PAGE_H__
+#define __PAGE_H__
+
 class Page {
   public:
-    Page(Pdf *pdf, int page_index);
+    Page();
+
+    bool initialize(Pdf *pdf, int page_index);
 
     bool isValid();
 
@@ -12,10 +17,13 @@ class Page {
 
     double height();
 
-    bool render(FPDF_BITMAP bitmap);
+    bool render(const std::string &file, int width, int height);
 
     ~Page();
 
   private:
     FPDF_PAGE _page;
 };
+
+
+#endif // __PAGE_H__
