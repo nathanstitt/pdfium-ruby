@@ -2,16 +2,29 @@ require "mkmf"
 require 'rbconfig'
 
 LIB_DIRS = [
-  "/usr/local/lib/pdfium"
+  "/usr/local/lib/pdfium",
+  "/usr/lib/pdfium"
 ]
 HEADER_DIRS = [
+  "/usr/include/pdfium",
   "/usr/local/include/pdfium/fpdfsdk/include"
 ]
+have_library('pthread')
+have_library('objc') if RUBY_PLATFORM =~ /darwin/
+$CPPFLAGS += " -Wall" unless $CPPFLAGS.split.include? "-Wall"
+$CPPFLAGS += " -g" unless $CPPFLAGS.split.include? "-g"
+$CPPFLAGS += " -rdynamic" unless $CPPFLAGS.split.include? "-rdynamic"
+$CPPFLAGS += " -fPIC" unless $CPPFLAGS.split.include? "-rdynamic" or RUBY_PLATFORM =~ /darwin/
 
-LIBS=%w{pdfium bigint freetype fpdfdoc fpdftext formfiller
-javascript v8_base v8_libbase v8_snapshot v8_libplatform jsapi
-icui18n icuuc icudata pdfwindow fxedit fxcodec fxcrt fpdfdoc fpdfapi fdrm
-fxge freetype pthread }
+# The order that the libs are listed matters for Linux!
+# to debug missing symbols you can run:
+#    for l in `ls /usr/lib/pdfium/*.a`; do echo $l; nm $l | grep 'CRYPT_SHA256Start'; done
+# The listing with a "T" contains the symbol, the ones with a "U"
+# depend on it.  The "U" libs must come after the "T"
+LIBS=%w{javascript bigint freetype fpdfdoc fpdftext formfiller
+icudata icuuc icui18n v8_libbase v8_base v8_snapshot v8_libplatform  jsapi
+pdfwindow fxedit fxcodec fxcrt fpdfdoc  fdrm fpdfapi
+fxge freetype pdfium pthread }
 
 dir_config("libs", HEADER_DIRS, LIB_DIRS)
 
@@ -25,6 +38,5 @@ if `uname`.chomp == 'Darwin' then
 
   $LDFLAGS << FRAMEWORKS.map { |f| " -framework #{f}" }.join
 end
-
 
 create_makefile "pdfium_ext"
