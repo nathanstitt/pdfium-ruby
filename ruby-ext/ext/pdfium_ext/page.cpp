@@ -36,11 +36,24 @@ Page::render(const std::string &file, int width, int height){
     // Create bitmap.  width, height, alpha 1=enabled,0=disabled
     bitmap = FPDFBitmap_Create(width, height, 0);
 
-    // fill all pixles with white for the background color
+    // fill all pixels with white for the background color
     FPDFBitmap_FillRect(bitmap, 0, 0, width, height, 0xFFFFFFFF);
 
+    // Render a page to a bitmap in RGBA format
+    // args are: *buffer, page, start_x, start_y, size_x, size_y, rotation, and flags
+    // flags are:
+    //      0 for normal display, or combination of flags defined below
+    //   0x01 Set if annotations are to be rendered
+    //   0x02 Set if using text rendering optimized for LCD display
+    //   0x04 Set if you don't want to use GDI+
     FPDF_RenderPageBitmap(bitmap, _page, 0, 0, width, height, 0, 0);
+
+    // The stride holds the width of one row in bytes.  It may not be an exact
+    // multiple of the pixel width because the data may be packed to always end on a byte boundary
     int stride = FPDFBitmap_GetStride(bitmap);
+
+    // Safety checks to make sure that the bitmap
+    // is properly sized and can be safely manipulated
 
     if (stride < 0 || width < 0 || height < 0){
         FPDFBitmap_Destroy(bitmap);
@@ -56,34 +69,41 @@ Page::render(const std::string &file, int width, int height){
         return false;
     }
 
-    const char* buffer = reinterpret_cast<const char*>(FPDFBitmap_GetBuffer(bitmap));
+    // Read the FPDF bitmap into a FreeImage bitmap.
+    FIBITMAP *raw = FreeImage_ConvertFromRawBits((BYTE*)FPDFBitmap_GetBuffer(bitmap),
+                                                 width, height, stride, 32,
+                                                 0xFF0000, 0x00FF00, 0x0000FF, true);
 
-    bitmap_image bmp;
+    // Both jpg and gif require that the bpp be set to 24.
+    // since we're not exporting using alpha transparency above in FPDFBitmap_Create
+    // there's no point in supporting 32bpp at this point.
+    FIBITMAP *image = FreeImage_ConvertTo24Bits(raw);
+    FreeImage_Unload(raw);
 
-    bmp.setwidth_height(width, height,true);
-    for (int h = 0; h < height; ++h) {
-        const char* src_line = buffer + (stride * h);
-        for (int w = 0; w < width; ++w) {
-            bmp.set_pixel(w, h,
-                          src_line[(w * 4) + 2],
-                          src_line[(w * 4) + 1],
-                          src_line[w * 4]);
-        }
-    }
+    // at this point we're done with rendering and
+    // can destroy the FPDF bitmap
     FPDFBitmap_Destroy(bitmap);
 
-    std::ofstream stream(file.c_str(),std::ios::binary);
-    if (!stream){
-        return false;
-    }
-    bmp.save_image( stream );
-    stream.close();
+    // figure out the desired format from the file extension
+    FREE_IMAGE_FORMAT format = FreeImage_GetFIFFromFilename(file.c_str());
 
-    return true;
+    bool success = false;
+    if ( FIF_GIF == format ){
+        // Gif requires quantization to drop to 8bpp
+        FIBITMAP *gif = FreeImage_ColorQuantize(image, FIQ_WUQUANT);
+        success = FreeImage_Save(FIF_GIF, gif, file.c_str(), GIF_DEFAULT);
+        FreeImage_Unload(gif);
+    } else {
+        // All other formats should be just a save call
+        success = FreeImage_Save(format, image, file.c_str(), 0);
+    }
+
+    // unload the image
+    FreeImage_Unload(image);
+
+    return success;
 }
 
 Page::~Page(){
-    if (_page){ // the page might not have opened successfully
-        FPDF_ClosePage(_page);
-    }
+    _pdf->releasePage(this);
 }

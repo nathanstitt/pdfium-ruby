@@ -25,7 +25,7 @@ $CPPFLAGS += " -fPIC" unless $CPPFLAGS.split.include? "-rdynamic" or RUBY_PLATFO
 LIBS=%w{javascript bigint freetype fpdfdoc fpdftext formfiller
 icudata icuuc icui18n v8_libbase v8_base v8_snapshot v8_libplatform  jsapi
 pdfwindow fxedit fxcrt fxcodec fpdfdoc  fdrm fxge fpdfapi
-freetype pdfium pthread }
+freetype pdfium pthread freeimage}
 
 dir_config("libs", HEADER_DIRS, LIB_DIRS)
 
