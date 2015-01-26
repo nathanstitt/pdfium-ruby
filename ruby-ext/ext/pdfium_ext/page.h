@@ -5,13 +5,14 @@
 #ifndef __PAGE_H__
 #define __PAGE_H__
 
+class Pdf;
+
 class Page {
+    friend class Pdf;
   public:
     Page();
 
-    bool initialize(Pdf *pdf, int page_index);
-
-    bool isValid();
+    void initialize(Pdf *pdf, FPDF_PAGE page);
 
     double width();
 
@@ -22,6 +23,7 @@ class Page {
     ~Page();
 
   private:
+    Pdf *_pdf;
     FPDF_PAGE _page;
 };
 

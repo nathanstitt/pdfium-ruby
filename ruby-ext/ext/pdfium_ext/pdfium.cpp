@@ -34,6 +34,7 @@ static VALUE rb_page;  // Ruby definition of the Page class
 // The Pdf class                                                       //
 /////////////////////////////////////////////////////////////////////////
 
+
 // a utility method to extract the reference to the Pdf class from the Ruby wrapping
 static Pdf*
 getPdf(VALUE self) {
@@ -42,24 +43,23 @@ getPdf(VALUE self) {
   return p;
 }
 
+// While you might think this would free the Pdf object it does not
+// Instead it simply marks the Pdf as no longer in use, and then it
+// will release itself when there are no Pages in use.
+// https://redmine.ruby-lang.org/issues/6292
 static void
 pdf_gc_free(Pdf* pdf) {
-    //    printf("GC Free PDF: %016" PRIxPTR "\n", (uintptr_t)pdf);
-    // we need to call the destructor ourselves since we're using xmalloc and xfree
-    pdf->~Pdf();
-    ruby_xfree(pdf);
+    printf("GC Free PDF: %p\n" , pdf);
+    // Note: we do not actually destroy the object yet.
+    // instead we mark it as unused and it will remove itself
+    // once all pages are finished
+    pdf->markUnused();
 }
-
-// static void
-// pdf_gc_mark(Pdf *pdf){
-//     // printf("GC Mark PDF: %016" PRIxPTR "\n", (uintptr_t)pdf);
-// }
-
 
 static VALUE
 pdf_allocate(VALUE klass) {
-    Pdf *pdf = (Pdf*)ruby_xmalloc(sizeof(Pdf));
-    new (pdf) Pdf();
+    Pdf *pdf = new Pdf();
+    printf("Alloc PDF: %p\n", pdf);
     return Data_Wrap_Struct(klass, NULL, pdf_gc_free, pdf );
 }
 
@@ -95,26 +95,24 @@ getPage(VALUE self) {
 
 static void
 page_gc_free(Page* page) {
-    //    printf("GC Free PDF: %016" PRIxPTR "\n", (uintptr_t)pdf);
-    // we need to call the destructor ourselves since we're using xmalloc and xfree
-    page->~Page();
-    ruby_xfree(page);
+    printf("GC Free Page: %p\n", page);
+    // The page's destructor will remove itself from the Pdf, and perform all cleanup
+    delete page;
 }
-
 
 static VALUE
 page_allocate(VALUE klass){
-    Page *page = (Page*)ruby_xmalloc(sizeof(Page));
-    new (page) Page();
+    Page *page = new Page();
+    printf("Alloc Page: %p\n", page);
     return Data_Wrap_Struct(klass, NULL, page_gc_free, page);
 }
 
 static VALUE
 page_initialize(VALUE self, VALUE _pdf, VALUE page_number) {
-    Page *pg = getPage(self);
     Pdf* pdf = getPdf(_pdf);
+    Page *page = getPage(self);
 
-    if (!pg->initialize(pdf, FIX2INT(page_number))){
+    if (!pdf->initializePage(page, FIX2INT(page_number))){
         rb_raise(rb_eRuntimeError, "Unable to load page %d", FIX2INT(page_number));
     }
     return Qnil;
@@ -125,6 +123,7 @@ page_dimensions(VALUE self){
     Page *pg = getPage(self);
     return rb_ary_new3(2, rb_float_new(pg->width()), rb_float_new(pg->height()) );
 }
+
 
 static VALUE
 page_render(VALUE self, VALUE path, VALUE width, VALUE height){
@@ -159,7 +158,7 @@ void Init_pdfium_ext()
                      reinterpret_cast<VALUE(*)(...)>(pdf_page_count),0);
 
     rb_define_method(rb_pdf, "page_at",
-                     reinterpret_cast<VALUE(*)(...)>(pdf_page_count),1);
+                     RUBY_METHOD_FUNC(pdf_page_count),1);
 
     // The Page class definition and methods
     rb_page = rb_define_class_under(rb_pdfium_module, "Page", rb_cObject);

@@ -1,22 +1,21 @@
 #include "page.h"
+#include <FreeImage.h>
+
 #include "fpdfview.h"
-#include "bitmap.hpp"
 #include <limits.h>
+#include <algorithm>
+#include <string>
+
 Page::Page()
-    : _page(0)
+    : _pdf(0), _page(0)
 {}
 
-bool
-Page::initialize(Pdf *pdf, int page_index){
-    _page = FPDF_LoadPage(pdf->_pdf, page_index);
-
-    return this->isValid();
+void
+Page::initialize(Pdf *pdf, FPDF_PAGE page){
+    _pdf  = pdf;
+    _page = page;
 }
 
-bool
-Page::isValid(){
-    return _page;
-}
 
 double
 Page::width(){
@@ -27,7 +26,6 @@ double
 Page::height(){
     return FPDF_GetPageWidth(_page);
 }
-
 
 // N.B.  Does not draw forms or annotations on bitmap
 bool
