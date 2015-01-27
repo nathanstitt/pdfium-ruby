@@ -7,16 +7,16 @@
 #include <string>
 
 Page::Page()
-    : _pdf(0), _page(0)
+    : _doc(0), _page(0)
 {}
 
 
 bool
-Page::initialize(Pdf *pdf, int page_number){
-    _pdf  = pdf;
-    _page = FPDF_LoadPage(_pdf->pdfiumDocument(), page_number);
+Page::initialize(Document *doc, int page_number){
+    _doc  = doc;
+    _page = FPDF_LoadPage(_doc->pdfiumDocument(), page_number);
     if (this->isValid()){
-        pdf->retain(this);
+        doc->retain(this);
     }
     return this->isValid();
 }
@@ -118,6 +118,6 @@ Page::render(const std::string &file, int width, int height){
 Page::~Page(){
     if (_page){
         FPDF_ClosePage(_page);
+        _doc->release(this);
     }
-    _pdf->release(this);
 }

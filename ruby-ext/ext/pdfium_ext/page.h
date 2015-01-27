@@ -1,18 +1,18 @@
 #include <iostream>
 #include "fpdf_ext.h"
-#include "pdf.h"
+#include "document.h"
 
 #ifndef __PAGE_H__
 #define __PAGE_H__
 
-class Pdf;
+class Document;
 
 class Page {
-    friend class Pdf;
+
   public:
     Page();
 
-    bool initialize(Pdf *pdf, int page_index);
+    bool initialize(Document *doc, int page_index);
 
     bool isValid();
 
@@ -25,8 +25,7 @@ class Page {
     ~Page();
 
   private:
-    int page_number;
-    Pdf *_pdf;
+    Document *_doc;
     FPDF_PAGE _page;
 };
 

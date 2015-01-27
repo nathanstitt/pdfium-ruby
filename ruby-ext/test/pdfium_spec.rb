@@ -5,17 +5,19 @@ require 'tempfile'
 #   `ps -o vsz -p #{$$}`.strip.split.last.to_i
 # end
 # GC.start(full_mark: true, immediate_sweep: true)
+# puts "Press enter to continue"
+# gets
 
 describe PDFium do
 
   it "creates classes" do
-    assert PDFium::Pdf
+    assert PDFium::Document
     assert PDFium::Page
   end
 
   it "throws exception on invalid pdf" do
     assert_raises(RuntimeError) do
-      PDFium::Pdf.new( pdf_path("invalid") )
+      PDFium::Document.new( pdf_path("invalid") )
     end
 
   end
@@ -27,7 +29,7 @@ describe PDFium do
       "SDK_Guide" => 90,
       "SlowestProcessingDoc" => 2390
     }.each do | name, pgs |
-      pdf = PDFium::Pdf.new( pdf_path(name) )
+      pdf = PDFium::Document.new( pdf_path(name) )
       assert_equal pgs, pdf.page_count, "#{name} page count is incorrect"
       pdf = nil
     end
@@ -35,7 +37,7 @@ describe PDFium do
 
 
   it "reads page dimensions" do
-    pdf = PDFium::Pdf.new( pdf_path("basicapi") );
+    pdf = PDFium::Document.new( pdf_path("basicapi") );
     page = PDFium::Page.new(pdf,0)
     height, width = page.dimensions
     assert_in_delta 841.89, height
@@ -44,7 +46,7 @@ describe PDFium do
   end
 
   it "saves a page" do
-    pdf = PDFium::Pdf.new( pdf_path("OoPdfFormExample") );
+    pdf = PDFium::Document.new( pdf_path("OoPdfFormExample") );
     page = PDFium::Page.new(pdf,0)
     formats = %w{gif png jpeg bmp}
     formats.each do | format |
@@ -59,7 +61,7 @@ describe PDFium do
   end
 
   it "renders a large pdf" do
-    pdf = PDFium::Pdf.new( pdf_path("basicapi") ) #SlowestProcessingDoc") );
+    pdf = PDFium::Document.new( pdf_path("basicapi") ) #SlowestProcessingDoc") );
     0.upto(pdf.page_count-1) do | pg_num |
       page = PDFium::Page.new(pdf,pg_num)
       tf = Tempfile.new(["pdf-page-test",".gif"])
