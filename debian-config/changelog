@@ -1,4 +1,10 @@
-pdfium (0.1+git20150114-1) unstable; urgency=low
+pdfium (0.1+git20150120-1) trusty; urgency=low
+
+  * Pulled latest source from git repo
+
+ -- Nathan Stitt <nathan@stitt.org>  Tue, 20 Jan 2015 16:33:03 +0000
+
+pdfium (0.1+git20150116-1) unstable; urgency=low
 
   * Initial release
 
