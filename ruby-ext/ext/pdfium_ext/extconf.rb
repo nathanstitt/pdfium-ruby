@@ -21,7 +21,7 @@ have_library('pthread')
 DEBUG = ENV['DEBUG'] == '1'
 
 $CPPFLAGS += " -Wall"
-$CPPFLAGS += " -g" if DEBUG
+$CPPFLAGS += " -g" #if DEBUG
 
 # The order that the libs are listed matters for Linux!
 # to debug missing symbols you can run:
