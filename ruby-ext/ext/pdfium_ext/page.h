@@ -12,7 +12,9 @@ class Page {
   public:
     Page();
 
-    void initialize(Pdf *pdf, FPDF_PAGE page);
+    bool initialize(Pdf *pdf, int page_index);
+
+    bool isValid();
 
     double width();
 
@@ -23,6 +25,7 @@ class Page {
     ~Page();
 
   private:
+    int page_number;
     Pdf *_pdf;
     FPDF_PAGE _page;
 };

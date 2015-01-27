@@ -33,28 +33,34 @@
 //
 
 class Pdf {
+
   public:
     static void Initialize();
 
+    // an empty constructor. Ruby's allocate object doesn't have any arguments
+    // so the Pdf allocation needs to function in the same manner
     Pdf();
 
     bool initialize(const char* file);
-
-    bool initializePage(Page *page, int page_index);
 
     bool isValid();
 
     int pageCount();
 
-    Page* getPage(int page_index);
-    void releasePage(Page*);
+    //    Page* getPage(int page_index);
+    void retain(Page* page);
+    void release(Page* page);
 
     void markUnused();
+
+    FPDF_DOCUMENT pdfiumDocument();
 
     ~Pdf();
 
   private:
-    std::unordered_set<Page*> _in_use_pages;
+
+
+    std::unordered_set<Page*> _pages;
     bool _in_use;
     FPDF_DOCUMENT _pdf;
     void maybeKillSelf();

@@ -10,10 +10,21 @@ Page::Page()
     : _pdf(0), _page(0)
 {}
 
-void
-Page::initialize(Pdf *pdf, FPDF_PAGE page){
+
+bool
+Page::initialize(Pdf *pdf, int page_number){
     _pdf  = pdf;
-    _page = page;
+    _page = FPDF_LoadPage(_pdf->pdfiumDocument(), page_number);
+    if (this->isValid()){
+        pdf->retain(this);
+    }
+    return this->isValid();
+}
+
+
+bool
+Page::isValid(){
+    return _page;
 }
 
 
@@ -22,17 +33,19 @@ Page::width(){
     return FPDF_GetPageHeight(_page);
 }
 
+
 double
 Page::height(){
     return FPDF_GetPageWidth(_page);
 }
 
+
 // N.B.  Does not draw forms or annotations on bitmap
 bool
 Page::render(const std::string &file, int width, int height){
-    FPDF_BITMAP bitmap;
+
     // Create bitmap.  width, height, alpha 1=enabled,0=disabled
-    bitmap = FPDFBitmap_Create(width, height, 0);
+    FPDF_BITMAP bitmap = FPDFBitmap_Create(width, height, 0);
 
     // fill all pixels with white for the background color
     FPDFBitmap_FillRect(bitmap, 0, 0, width, height, 0xFFFFFFFF);
@@ -103,5 +116,8 @@ Page::render(const std::string &file, int width, int height){
 }
 
 Page::~Page(){
-    _pdf->releasePage(this);
+    if (_page){
+        FPDF_ClosePage(_page);
+    }
+    _pdf->release(this);
 }

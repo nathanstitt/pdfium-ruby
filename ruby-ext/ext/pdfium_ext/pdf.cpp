@@ -39,12 +39,16 @@ Pdf::isValid(){
     return _pdf;
 }
 
-
 int
 Pdf::pageCount(){
     return FPDF_GetPageCount(_pdf);
 }
 
+
+FPDF_DOCUMENT
+Pdf::pdfiumDocument(){
+    return _pdf;
+}
 
 Pdf::~Pdf(){
     if (_pdf){ // the pdf might not have opened successfully
@@ -56,27 +60,19 @@ Pdf::~Pdf(){
 // Returns a page object for the given number.
 // adds the page to the in_use_pages set and returns it.
 // if PDFium fails to load the page, NULL is returned
-bool
-Pdf::initializePage(Page *page, int page_index){
-    FPDF_PAGE pdfium_page = FPDF_LoadPage(_pdf, page_index);
-    if ( pdfium_page ){
-        page->initialize(this, pdfium_page);
-        _in_use_pages.insert(page);
-        return true;
-    }
-    return false;
+void
+Pdf::retain(Page *page){
+    _pages.insert(page);
 }
 
-
 // Marks a page as no longer in use.
-// Removes the page from the in_use_pages set,
+// Removes the page from the _pages set,
 // If the page was the last one in the set and it's now empty,
 // and the Pdf object is also no longer in use, then destroys the Pdf object
 void
-Pdf::releasePage(Page *pg){
+Pdf::release(Page *pg){
     printf("Relase Page: %p\n" , pg);
-    FPDF_ClosePage(pg->_page);
-    _in_use_pages.erase(pg);
+    _pages.erase(pg);
     this->maybeKillSelf();
 }
 
@@ -85,7 +81,7 @@ Pdf::releasePage(Page *pg){
 void
 Pdf::maybeKillSelf(){
     printf("Testing if killing Pdf: %p\n", this);
-    if (_in_use_pages.empty() && !_in_use){
+    if (_pages.empty() && !_in_use){
         printf("Killing Pdf: %p\n", this);
         delete this;
     }

@@ -109,10 +109,10 @@ page_allocate(VALUE klass){
 
 static VALUE
 page_initialize(VALUE self, VALUE _pdf, VALUE page_number) {
-    Pdf* pdf = getPdf(_pdf);
     Page *page = getPage(self);
-
-    if (!pdf->initializePage(page, FIX2INT(page_number))){
+    Pdf   *pdf = getPdf(_pdf);
+    printf("INit page: %p pdf: %p\n", page, pdf);
+    if (!page->initialize(pdf, FIX2INT(page_number))){
         rb_raise(rb_eRuntimeError, "Unable to load page %d", FIX2INT(page_number));
     }
     return Qnil;
