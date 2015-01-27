@@ -6,6 +6,8 @@ extern "C" {
 #include <iostream>
 #include <string>
 
+#include "pdfium.h"
+
 #include "fpdf_dataavail.h"
 #include "fpdf_ext.h"
 #include "fpdfformfill.h"
@@ -49,7 +51,7 @@ getDocument(VALUE self) {
 // https://redmine.ruby-lang.org/issues/6292
 static void
 document_gc_free(Document* doc) {
-    printf("GC Free Doc: %p\n" , doc);
+    debug_printf("GC Free Doc: %p" , doc);
     // Note: we do not actually destroy the object yet.
     // instead we mark it as unused and it will remove itself
     // once all pages are finished
@@ -59,7 +61,7 @@ document_gc_free(Document* doc) {
 static VALUE
 document_allocate(VALUE klass) {
     Document *pdf = new Document();
-    printf("Alloc PDF: %p\n", pdf);
+    debug_printf("Alloc PDF: %p", pdf);
     return Data_Wrap_Struct(klass, NULL, document_gc_free, pdf );
 }
 
@@ -97,7 +99,7 @@ getPage(VALUE self) {
 
 static void
 page_gc_free(Page* page) {
-    printf("GC Free Page: %p\n", page);
+    debug_printf("GC Free Page: %p", page);
     // The page's destructor will remove itself from the Document, and perform all cleanup
     delete page;
 }
@@ -105,7 +107,7 @@ page_gc_free(Page* page) {
 static VALUE
 page_allocate(VALUE klass){
     Page *page = new Page();
-    printf("Alloc Page: %p\n", page);
+    debug_printf("Alloc Page: %p\n", page);
     return Data_Wrap_Struct(klass, NULL, page_gc_free, page);
 }
 
@@ -113,7 +115,6 @@ static VALUE
 page_initialize(VALUE self, VALUE _doc, VALUE page_number) {
     Page *page = getPage(self);
     Document   *pdf = getDocument(_doc);
-    printf("INit page: %p pdf: %p\n", page, pdf);
     if (!page->initialize(pdf, FIX2INT(page_number))){
         rb_raise(rb_eRuntimeError, "Unable to load page %d", FIX2INT(page_number));
     }

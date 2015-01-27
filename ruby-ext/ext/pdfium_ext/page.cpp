@@ -1,4 +1,5 @@
 #include "page.h"
+#include "pdfium.h"
 #include <FreeImage.h>
 
 #include "fpdfview.h"

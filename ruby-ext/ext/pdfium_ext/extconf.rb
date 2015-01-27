@@ -18,7 +18,10 @@ HEADER_DIRS = [
 
 have_library('pthread')
 
-$CPPFLAGS += " -Wall -g"
+DEBUG = ENV['DEBUG'] == '1'
+
+$CPPFLAGS += " -Wall"
+$CPPFLAGS += " -g" if DEBUG
 
 # The order that the libs are listed matters for Linux!
 # to debug missing symbols you can run:
@@ -45,5 +48,10 @@ if RUBY_PLATFORM =~ /darwin/
 else
   $CPPFLAGS += " -fPIC -std=c++11"
 end
+
+
+$defs.push "-DDEBUG=1" if DEBUG
+
+create_header
 
 create_makefile "pdfium_ext"
