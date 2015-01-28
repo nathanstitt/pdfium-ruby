@@ -1,4 +1,0 @@
-out/Release/obj/*.a lib/
-README doc/pdfium-dev/
-fpdfsdk/include include/
-
