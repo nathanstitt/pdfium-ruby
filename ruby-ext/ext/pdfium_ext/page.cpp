@@ -31,20 +31,27 @@ Page::isValid(){
 
 double
 Page::width(){
-    return FPDF_GetPageHeight(_page);
+    return FPDF_GetPageWidth(_page);
 }
 
 
 double
 Page::height(){
-    return FPDF_GetPageWidth(_page);
+    return FPDF_GetPageHeight(_page);
 }
 
 
-// N.B.  Does not draw forms or annotations on bitmap
-bool
-Page::render(const std::string &file, int width, int height){
+// Render the page to a FreeImage bitmap
+// the caller is responsible for calling
+// FreeImage_Unload on the bitmap when it's no
+// longer in use.
+// Does not draw forms or annotations on bitmap
 
+FIBITMAP *
+Page::renderToBitmap(int width, int height){
+    if (! this->calculate_default_sizes(width, height)){
+        return NULL;
+    }
     // Create bitmap.  width, height, alpha 1=enabled,0=disabled
     FPDF_BITMAP bitmap = FPDFBitmap_Create(width, height, 0);
 
@@ -69,52 +76,138 @@ Page::render(const std::string &file, int width, int height){
 
     if (stride < 0 || width < 0 || height < 0){
         FPDFBitmap_Destroy(bitmap);
-        return false;
+        return NULL;
     }
     if (height > 0 && width > INT_MAX / height){
         FPDFBitmap_Destroy(bitmap);
-        return false;
+        return NULL;
     }
     int out_len = stride * height;
     if (out_len > INT_MAX / 3){
         FPDFBitmap_Destroy(bitmap);
-        return false;
+        return NULL;
     }
 
     // Read the FPDF bitmap into a FreeImage bitmap.
-    FIBITMAP *raw = FreeImage_ConvertFromRawBits((BYTE*)FPDFBitmap_GetBuffer(bitmap),
-                                                 width, height, stride, 32,
-                                                 0xFF0000, 0x00FF00, 0x0000FF, true);
+    FIBITMAP *img32 = FreeImage_ConvertFromRawBits((BYTE*)FPDFBitmap_GetBuffer(bitmap),
+                                        width, height, stride, 32,
+                                        0xFF0000, 0x00FF00, 0x0000FF, true);
 
     // Both jpg and gif require that the bpp be set to 24.
     // since we're not exporting using alpha transparency above in FPDFBitmap_Create
     // there's no point in supporting 32bpp at this point.
-    FIBITMAP *image = FreeImage_ConvertTo24Bits(raw);
-    FreeImage_Unload(raw);
+    FIBITMAP *image = FreeImage_ConvertTo24Bits(img32);
+    FreeImage_Unload(img32);
 
     // at this point we're done with rendering and
     // can destroy the FPDF bitmap
     FPDFBitmap_Destroy(bitmap);
 
+    return image;
+
+}
+
+
+
+bool
+Page::unloadAndSaveBitmap(FIBITMAP *bmp, const std::string &file){
     // figure out the desired format from the file extension
     FREE_IMAGE_FORMAT format = FreeImage_GetFIFFromFilename(file.c_str());
 
     bool success = false;
     if ( FIF_GIF == format ){
         // Gif requires quantization to drop to 8bpp
-        FIBITMAP *gif = FreeImage_ColorQuantize(image, FIQ_WUQUANT);
+        FIBITMAP *gif = FreeImage_ColorQuantize(bmp, FIQ_WUQUANT);
         success = FreeImage_Save(FIF_GIF, gif, file.c_str(), GIF_DEFAULT);
         FreeImage_Unload(gif);
     } else {
         // All other formats should be just a save call
-        success = FreeImage_Save(format, image, file.c_str(), 0);
+        success = FreeImage_Save(format, bmp, file.c_str(), 0);
     }
 
     // unload the image
-    FreeImage_Unload(image);
+    FreeImage_Unload(bmp);
 
     return success;
 }
+
+
+bool
+Page::render(const std::string &file, const sizes_t &sizes){
+    if (sizes.empty()){
+        return false;
+    }
+    sizes_t::value_type lg_size = sizes.front();
+    FIBITMAP *tmpl_image = this->renderToBitmap(lg_size.first, lg_size.second);
+    if (!tmpl_image){
+        return false;
+    }
+    int width_pos  = file.find("%w", 0, 2);
+    int height_pos = file.find("%h", 0, 2);
+    if (width_pos == std::string::npos || height_pos == std::string::npos ){
+        FreeImage_Unload(tmpl_image);
+        return false;
+    }
+    for (sizes_t::const_iterator size = sizes.begin(); size != sizes.end(); ++size){
+        int width = size->first;
+        int height = size->second;
+        if (!this->calculate_default_sizes(width, height)){
+            return false;
+        }
+
+        // The section in the FreeImage manual titled "Choosing the right resampling filter"
+        // recommends Catmull-Rom filter.
+        // http://www.imagemagick.org/Usage/filter/ also has good info
+
+        FIBITMAP *smaller = FreeImage_Rescale(tmpl_image, width, height, FILTER_CATMULLROM);
+        if (!smaller){
+            FreeImage_Unload(tmpl_image);
+            return false;
+        }
+        std::string dest(file); // copy the file in prep for replacing sizes
+        // replace the width format "%w"
+        dest.replace(width_pos, 2, std::to_string(width) );
+
+        // and then the height "%h".  We need to re-find the formatter position
+        // since the above replacement has altered the string and it's position
+        int height_pos = dest.find("%h", 0, 2);
+        dest.replace(height_pos, 2, std::to_string(height) );
+
+        // and then export the image
+        if (!this->unloadAndSaveBitmap(smaller, dest)){
+            FreeImage_Unload(tmpl_image);
+            return false;
+        }
+    }
+    FreeImage_Unload(tmpl_image);
+    return true;
+}
+
+
+// render the page to a file
+bool
+Page::render(const std::string &file, int width, int height){
+    FIBITMAP *image = this->renderToBitmap(width, height);
+    if (!image){
+        return false;
+    }
+    return this->unloadAndSaveBitmap(image, file);
+}
+
+bool
+Page::calculate_default_sizes(int &width, int &height){
+    if (!width && !height){
+        return false;
+    }
+    if (!width){
+        width = ((double)this->width()) * ( (double)height / this->height() );
+    }
+    if (!height){
+        height = ((double)this->height()) * ( (double)width / this->width() );
+    }
+    return true;
+}
+
 
 Page::~Page(){
     if (_page){

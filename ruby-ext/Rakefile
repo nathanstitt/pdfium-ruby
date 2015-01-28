@@ -7,6 +7,13 @@ Rake::TestTask.new do |t|
     t.pattern = "test/*_spec.rb"
 end
 
+RDOC_FILES = FileList["README.md", "ext/pdfium_ext/pdfium.cpp"]
+Rake::RDocTask.new do |rd|
+  rd.main = "README.md"
+  rd.rdoc_files.include(RDOC_FILES)
+end
+
+
 require "bundler/gem_tasks"
 
 require "rake/extensiontask"
