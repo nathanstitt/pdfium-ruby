@@ -17,6 +17,7 @@ override_dh_auto_build:
 
 override_dh_auto_clean:
 	if [ -d out ]; then rm -rf out; fi
+	dh_quilt_unpatch
 	rm -rf Makefile v8/out/Makefile v8/out/environment
 	find -name '*.mk' -exec rm {} \;
 	find -name '*.pyc' -exec rm {} \;

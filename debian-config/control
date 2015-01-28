@@ -1,7 +1,7 @@
 Source: pdfium
 Priority: optional
 Maintainer: Nathan Stitt <nathan@stitt.org>
-Build-Depends: build-essential, debhelper (>= 8.0.0), gyp (>= 0.1~svn1729-3ubuntu1), ninja-build(>= 1.3.4)
+Build-Depends: build-essential, debhelper (>= 8.0.0), gyp (>= 0.1~svn1729-3ubuntu1)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: https://code.google.com/p/pdfium/
