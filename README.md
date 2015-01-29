@@ -2,9 +2,10 @@
 
 The Debian package currently copies:
 
- * Header files from fpdfsdk/include to /usr/include/pdfium/fpdfsdk
- * All of the static libraries from out/Release/*.a  to /usr/lib/pdfium
- * The test application from out/Release/pdfium_test to /usr/bin/pdfium-test
+  * Header files from fpdfsdk/include to /usr/include/pdfium
+  * Header files from v8/include/* to /usr/include/pdfium/v8
+  * All of the static libraries from out/Release/*.a  to /usr/lib/pdfium
+  * The test application from out/Release/pdfium_test to /usr/bin/pdfium_test
 
 To build the deb run:
 
