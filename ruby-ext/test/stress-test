@@ -10,6 +10,8 @@ COMPARE_GM = true
 # puts "Waiting for profiler attachment (PID: #{Process.pid})\nPress enter to continue"
 # gets
 
+# Document.where(original_extension:'pdf',access:Document::PUBLIC).where("random() < 0.01").limit(30).map{|d|d.original_file_path}
+
 pdfs=Pathname.glob(Pathname.new(__FILE__).dirname.join("pdfs","*.pdf") )
 def comma(num)
   num.to_s.chars.to_a.reverse.each_slice(3).map(&:join).join(",").reverse
@@ -42,16 +44,19 @@ def pdfium_extract(file)
 end
 
 GM="/usr/local/bin/gm"
-def gm_extract(pdf)
-  pages  = `pdfinfo #{pdf} | grep Pages | awk '{ print $2 }'`.to_i
+def gm_extract(pdf, pdfium_pages)
+  pages  = `pdfinfo #{pdf} 2>/dev/null | grep Pages | awk '{ print $2 }'`.to_i
+  if pages!=pdfium_pages
+    STDERR.puts "#{pdf} bad page count! #{pdfium_pages} != #{pages}"
+  end
   Dir.mktmpdir do |dir|
     0.upto(pages-1) do |page|
       base   = "#{dir}/pdf-page-test-#{page}"
       master = "#{base}-master.gif"
-      `#{GM} convert -density 150 -resize 1000x #{pdf}[#{page}] #{master}`
-      `#{GM} convert -resize 700x #{master} #{base}-700.gif`
-      `#{GM} convert -resize 180x #{master} #{base}-180.gif`
-      `#{GM} convert -resize 60x  #{master} #{base}-60.gif`
+      `#{GM} convert -density 150 -resize 1000x #{pdf}[#{page}] #{master} >/dev/null 2>&1`
+      `#{GM} convert -resize 700x #{master} #{base}-700.gif >/dev/null 2>&1`
+      `#{GM} convert -resize 180x #{master} #{base}-180.gif >/dev/null 2>&1`
+      `#{GM} convert -resize 60x  #{master} #{base}-60.gif >/dev/null 2>&1`
     end
     return [dir_size(dir)]
   end
@@ -76,7 +81,7 @@ loop do
     end
     if COMPARE_GM
       ( gm_size, gm_elapsed ) = execute_cmd do
-        gm_extract(file)
+        gm_extract(file, page_count)
       end
     end
 
