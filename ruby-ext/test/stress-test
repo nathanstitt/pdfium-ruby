@@ -69,8 +69,8 @@ def execute_cmd
   results
 end
 
-puts "                                                                                    Seconds                   FileSize"
-puts "Pass PDF                                                             Pgs  Memory   PDf    GM    Diff         PDf     GM     Diff"
+puts "                                                                                         FileSize (MB)                    Seconds"
+puts "Pass PDF                                                             Pgs  Memory  PDFium      GM      Diff      PDFium      GM      Diff"
 pass = 1
 loop do
   pdfs.each do | file |
@@ -88,13 +88,16 @@ loop do
     elapsed_diff = gm_elapsed - pd_elapsed
     size_diff    = gm_size    - pd_size
 
-    puts "%3i %-60s   %4d %8s %5.2f %5.2f %7.2f%%     %6.2f %6.2f %7.2f%%" % [ pass,
+    puts "%3i %-60s   %4d %8s %7.2f %7.2f %8.2f%%     %7.2f %7.2f %8.2f%%" % [ pass,
                                         file.to_s.gsub("./test/pdfs/",''),
                                         page_count,
                                         comma(OS.rss_bytes),
-                                        pd_elapsed, gm_elapsed, ( elapsed_diff / pd_elapsed ) * 100,
-                                        pd_size/1024, gm_size/1024, ( size_diff / pd_size ) * 100
-                                       ]
+                                        pd_size/1024, gm_size/1024, ( size_diff / pd_size ) * 100,
+                                        pd_elapsed, gm_elapsed, ( elapsed_diff / pd_elapsed ) * 100
+    ]
+    GC.start(full_mark: true, immediate_sweep: true)
+
   end
   pass += 1
+
 end
