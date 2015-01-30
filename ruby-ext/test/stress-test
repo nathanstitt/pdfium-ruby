@@ -5,7 +5,7 @@ require 'pathname'
 require 'tempfile'
 require 'os'
 
-COMPARE_GM = true
+COMPARE_GM = false
 
 # puts "Waiting for profiler attachment (PID: #{Process.pid})\nPress enter to continue"
 # gets
@@ -72,7 +72,9 @@ end
 puts "                                                                                         FileSize (MB)                    Seconds"
 puts "Pass PDF                                                             Pgs  Memory  PDFium      GM      Diff      PDFium      GM      Diff"
 pass = 1
+timings = []
 loop do
+  loop_start = Time.now
   pdfs.each do | file |
     next if file.to_s.match(/invalid/)
     gm_size = gm_elapsed = 0
@@ -96,8 +98,8 @@ loop do
                                         pd_elapsed, gm_elapsed, ( elapsed_diff / pd_elapsed ) * 100
     ]
     GC.start(full_mark: true, immediate_sweep: true)
-
   end
+  timings.push([pass, Time.now-loop_start,comma(OS.rss_bytes)])
   pass += 1
-
+  puts timings.map{|pn,elapsed,mem| "%d %0.2f %s" % [pn, elapsed, mem] }.join("; ")
 end
