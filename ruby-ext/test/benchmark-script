@@ -1,0 +1,170 @@
+#!/usr/bin/env ruby
+
+require_relative '../lib/pdfium'
+require 'pathname'
+require 'tempfile'
+require 'os'
+require 'csv'
+
+GM="/usr/local/bin/gm"
+SIZES=[
+  [1000,0],
+  [700,0],
+  [180,0],
+  [60,75]
+]
+PDFS=Pathname.glob(Pathname.new(__FILE__).dirname.join("pdfs","*.pdf") )
+
+
+
+# puts "Waiting for profiler attachment (PID: #{Process.pid})\nPress enter to continue"
+# gets
+
+# Document.where(original_extension:'pdf',access:Document::PUBLIC).where("random() < 0.01").limit(30).map{|d|d.original_file_path}
+
+# insert comma's into a number
+def comma(num)
+  num.to_s.chars.to_a.reverse.each_slice(3).map(&:join).join(",").reverse
+end
+
+# Execute a command and raise if it fails
+def x(cmd)
+  results = `#{cmd} >/dev/null 2>&1`
+  if 0 != $?.to_i
+    raise("#{cmd} failed with exit status #{$?}")
+  end
+  return results
+end
+
+# Run block inside a tmp directory
+# return the elapsted time in seconds, how much disk was used, and anything returned by the block
+def gather_statistics
+  results = []
+  Dir.mktmpdir do |dir|
+    start = Time.now
+    stats = yield dir
+    results << Time.now - start
+    results << `du #{dir} | awk '{print $1}'`.chomp.to_f
+    results += [*stats] unless stats.nil?
+  end
+  results
+end
+
+
+# Extract using pdfium gem's extract_sizes
+def render_sizes(pdf,dir)
+  doc = PDFium::Document.new( pdf )
+  doc.each_page do | page |
+    tf = "#{dir}/pdf-page-test-#{page.number}-%w-%h.gif"
+    page.render_sizes(tf, SIZES) or die "failed to render pg #{page.number} of #{pdf}"
+  end
+  doc.page_count
+end
+
+# Extract using old GM method
+def gm_render(pdf, dir)
+  page_count  = `pdfinfo #{pdf} 2>/dev/null | grep Pages | awk '{ print $2 }'`.to_i
+  0.upto(page_count-1) do |page|
+    base   = "#{dir}/pdf-page-test-#{page}"
+    master = "#{base}-master.gif"
+    x "#{GM} convert -density 150 -resize 1000x #{pdf}[#{page}] #{master}"
+    x "#{GM} convert -resize 700x #{master} #{base}-700.gif"
+    x "#{GM} convert -resize 180x #{master} #{base}-180.gif"
+    x "#{GM} convert -resize 60x  #{master} #{base}-60.gif"
+  end
+  page_count
+end
+
+
+# Extract using pdfium gem's render(file,width,height) method
+def render_each(pdf, dir)
+  doc = PDFium::Document.new( pdf )
+  doc.each_page do | page |
+    SIZES.each do | width, height |
+      # This isn't super great, since we'll have files with a 0 in them for the missing
+      # width/heights.  Doesn't really matter for this purpose though, we only need unique names
+      tf = "#{dir}/pdf-page-test-#{page.number}-#{width}-#{height}.gif" % [ width, height ]
+      page.render(tf, width, height) or die "failed to render pg #{page.number} of #{pdf}"
+    end
+  end
+  doc.page_count
+end
+
+# Extract using pdfium to render to largest size, and GM to scale the image's smaller
+def hybrid_render(pdf,dir)
+  doc = PDFium::Document.new( pdf )
+  doc.each_page do | page |
+    master = "#{dir}/pdf-page-test-master-#{page.number}.gif"
+    page.render(master, 1000, 0) or die "failed to render pg #{page.number} of #{pdf}"
+    base = "#{dir}/pdf-page-test-master-#{page.number}"
+    x "#{GM} convert -resize 700x #{master} #{base}-700.gif"
+    x "#{GM} convert -resize 180x #{master} #{base}-180.gif"
+    x "#{GM} convert -resize 60x  #{master} #{base}-60.gif"
+  end
+  doc.page_count
+end
+
+
+
+pass = 1
+timings = []
+
+# Tests can be added/removed from this list to run specific comparisions
+# or to only benchmark a single type
+TESTS = %w{render_sizes render_each hybrid_render gm_render}.map do | name |
+  [name, method(name)]
+end
+
+def percent_difference(name, results)
+  mine = results[name]
+
+  time_diff = results.map{|n,result| result[0] }.min - mine[0]
+  disk_diff  = results.map{|n,result| result[1] }.min - mine[1]
+
+  [ time_diff / mine[0] * 100, disk_diff / mine[1] * 100 ]
+end
+
+print "Pass PDF          Pgs  Memory"
+puts ("%35s"*TESTS.length) % TESTS.map{|test,_|"     "+test}
+CSV.open("benchmark.csv","wb") do | csv |
+  csv << [' ', ' ',' ',' '] + TESTS.map{|test,_|[test,' ', ' ', ' ']}.flatten
+  csv << %w{Pass PDF Pgs Memory} + TESTS.map{|test,_| %w{Secs Disk %Slower %Disk} }.flatten
+
+  #loop do
+    loop_start = Time.now
+    PDFS.shuffle.each do | file |
+      next if file.to_s.match(/invalid/)
+
+      page_count = 0
+
+      results = {}
+      TESTS.shuffle.each do | name, test |
+        results[name] = gather_statistics do | destdir |
+          page_count = test.call(file,destdir)
+        end
+      end
+      csv_line = [ pass, file.to_s.gsub("./test/pdfs/",'')[0..10],
+                   page_count, comma(OS.rss_bytes) ]
+
+      print "%3i %-12s %4d %8s |" % csv_line
+      TESTS.each do | name, _ |
+        result = results[name]
+        diffs = percent_difference(name, results)
+        stats = [
+          result[0], result[1], diffs[0], diffs[1]
+        ]
+        csv_line += stats
+        print "%6.2f%10.2f%8.2f%%%8.2f%% | " % stats
+      end
+      puts
+      csv << csv_line
+
+      GC.start(full_mark: true, immediate_sweep: true)
+    end
+    timings.push([pass, Time.now-loop_start,comma(OS.rss_bytes)])
+    pass += 1
+    puts timings.map{|pn,elapsed,mem| "%d %0.2f %s" % [pn, elapsed, mem] }.join("; ")
+
+
+  #end
+end
