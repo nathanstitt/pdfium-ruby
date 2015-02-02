@@ -142,8 +142,8 @@ Page::render(const std::string &file, const sizes_t &sizes){
     if (!tmpl_image){
         return false;
     }
-    int width_pos  = file.find("%w", 0, 2);
-    int height_pos = file.find("%h", 0, 2);
+    std::string::size_type width_pos  = file.find("%w", 0, 2);
+    std::string::size_type height_pos = file.find("%h", 0, 2);
     if (width_pos == std::string::npos || height_pos == std::string::npos ){
         FreeImage_Unload(tmpl_image);
         return false;
