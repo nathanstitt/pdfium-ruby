@@ -61,6 +61,17 @@ def render_sizes(pdf,dir)
   doc.page_count
 end
 
+# Extract using pdfium gem and then freeimage to resize
+def render_resize(pdf,dir)
+  doc = PDFium::Document.new( pdf )
+  doc.each_page do | page |
+    tf = "#{dir}/pdf-page-test-#{page.number}-%w-%h.gif"
+    page.render_resize(tf, SIZES) or die "failed to render pg #{page.number} of #{pdf}"
+  end
+  doc.page_count
+end
+
+
 # Extract using old GM method
 def gm_render(pdf, dir)
   page_count  = `pdfinfo #{pdf} 2>/dev/null | grep Pages | awk '{ print $2 }'`.to_i
@@ -111,7 +122,7 @@ timings = []
 
 # Tests can be added/removed from this list to run specific comparisions
 # or to only benchmark a single type
-TESTS = %w{render_sizes render_each hybrid_render gm_render}.map do | name |
+TESTS = %w{render_sizes render_resize render_each hybrid_render gm_render}.map do | name |
   [name, method(name)]
 end
 
@@ -124,11 +135,14 @@ def percent_difference(name, results)
   [ time_diff / mine[0] * 100, disk_diff / mine[1] * 100 ]
 end
 
-print "Pass PDF          Pgs  Memory"
-puts ("%35s"*TESTS.length) % TESTS.map{|test,_|"     "+test}
+puts <<-EOF
+                            #{("%35s"*TESTS.length) % TESTS.map{|test,_|"     "+test}}
+ Pass PDF          Pgs  Memory #{"  Secs      Disk      Size    Speed |"*TESTS.length}
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+EOF
 CSV.open("benchmark.csv","wb") do | csv |
   csv << [' ', ' ',' ',' '] + TESTS.map{|test,_|[test,' ', ' ', ' ']}.flatten
-  csv << %w{Pass PDF Pgs Memory} + TESTS.map{|test,_| %w{Secs Disk %Slower %Disk} }.flatten
+  csv << %w{Pass PDF Pgs Memory} + TESTS.map{|test,_| %w{Secs Disk %Disk %Slower} }.flatten
 
   #loop do
     loop_start = Time.now
@@ -151,7 +165,7 @@ CSV.open("benchmark.csv","wb") do | csv |
         result = results[name]
         diffs = percent_difference(name, results)
         stats = [
-          result[0], result[1], diffs[0], diffs[1]
+          result[0], result[1], diffs[1], diffs[0]
         ]
         csv_line += stats
         print "%6.2f%10.2f%8.2f%%%8.2f%% | " % stats
@@ -164,7 +178,6 @@ CSV.open("benchmark.csv","wb") do | csv |
     timings.push([pass, Time.now-loop_start,comma(OS.rss_bytes)])
     pass += 1
     puts timings.map{|pn,elapsed,mem| "%d %0.2f %s" % [pn, elapsed, mem] }.join("; ")
-
 
   #end
 end
