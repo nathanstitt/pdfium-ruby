@@ -15,6 +15,7 @@ Page::Page()
 bool
 Page::initialize(Document *doc, int page_number){
     _doc  = doc;
+    _page_number = page_number;
     _page = FPDF_LoadPage(_doc->pdfiumDocument(), page_number);
     if (this->isValid()){
         doc->retain(this);
@@ -40,6 +41,10 @@ Page::height(){
     return FPDF_GetPageHeight(_page);
 }
 
+int
+Page::number(){
+    return _page_number;
+}
 
 // Render the page to a FreeImage bitmap
 // the caller is responsible for calling
@@ -108,9 +113,8 @@ Page::renderToBitmap(int width, int height){
 }
 
 
-
 bool
-Page::unloadAndSaveBitmap(FIBITMAP *bmp, const std::string &file){
+Page::saveAndUnloadBitmap(FIBITMAP *bmp, const std::string &file){
     // figure out the desired format from the file extension
     FREE_IMAGE_FORMAT format = FreeImage_GetFIFFromFilename(file.c_str());
 
@@ -134,6 +138,38 @@ Page::unloadAndSaveBitmap(FIBITMAP *bmp, const std::string &file){
 
 bool
 Page::render(const std::string &file, const sizes_t &sizes){
+    if (sizes.empty()){
+        return false;
+    }
+    std::string::size_type width_pos  = file.find("%w", 0, 2);
+    std::string::size_type height_pos = file.find("%h", 0, 2);
+    if (width_pos == std::string::npos || height_pos == std::string::npos ){
+        return false;
+    }
+    for (sizes_t::const_iterator size = sizes.begin(); size != sizes.end(); ++size){
+        int width = size->first;
+        int height = size->second;
+        if (!this->calculate_default_sizes(width, height)){
+            return false;
+        }
+
+        std::string dest(file); // copy the file in prep for replacing sizes
+        // replace the width format "%w"
+        dest.replace(width_pos, 2, std::to_string(width) );
+
+        // and then the height "%h".  We need to re-find the formatter position
+        // since the above replacement has altered the string and it's position
+        height_pos = dest.find("%h", 0, 2);
+        dest.replace(height_pos, 2, std::to_string(height) );
+        FIBITMAP *image = this->renderToBitmap(width,height);
+        this->saveAndUnloadBitmap(image, dest);
+    }
+    return true;
+}
+
+
+bool
+Page::render_resize(const std::string &file, const sizes_t &sizes){
     if (sizes.empty()){
         return false;
     }
@@ -174,7 +210,7 @@ Page::render(const std::string &file, const sizes_t &sizes){
         dest.replace(height_pos, 2, std::to_string(height) );
 
         // and then export the image
-        if (!this->unloadAndSaveBitmap(smaller, dest)){
+        if (!this->saveAndUnloadBitmap(smaller, dest)){
             FreeImage_Unload(tmpl_image);
             return false;
         }
@@ -183,7 +219,6 @@ Page::render(const std::string &file, const sizes_t &sizes){
     return true;
 }
 
-
 // render the page to a file
 bool
 Page::render(const std::string &file, int width, int height){
@@ -191,7 +226,7 @@ Page::render(const std::string &file, int width, int height){
     if (!image){
         return false;
     }
-    return this->unloadAndSaveBitmap(image, file);
+    return this->saveAndUnloadBitmap(image, file);
 }
 
 bool

@@ -25,6 +25,8 @@ class Page {
     double width();
     double height();
 
+    int number();
+
     // render page to file with width/height.  If either width or height is 0
     // the page will be scaled to match the missing size
     bool render(const std::string &file, int width, int height);
@@ -34,11 +36,15 @@ class Page {
     // For best quality, the largest size should be give first
     bool render(const std::string &file, const sizes_t &sizes);
 
+    // render to the first size, then use freeimage to scale the page down
+    // to the remaining sizes
+    bool render_resize(const std::string &file, const sizes_t &sizes);
+
     ~Page();
 
   private:
     Document *_doc;
-
+    int _page_number;
     // Render the page to a FreeImage bitmap.
     // The caller is responsible for calling FreeImage_Unload on the bitmap when it's no
     // longer in use.
@@ -46,7 +52,7 @@ class Page {
     // will return NULL if render fails
     FIBITMAP *renderToBitmap(int width, int height);
 
-    bool unloadAndSaveBitmap(FIBITMAP *bmp, const std::string &file);
+    bool saveAndUnloadBitmap(FIBITMAP *bmp, const std::string &file);
 
     // these check if value is 0 and if so scale the
     // missing sizes to match.

@@ -191,17 +191,44 @@ page_initialize(VALUE self, VALUE _doc, VALUE page_number) {
 
 /*
  * call-seq:
- *   dimensions -> Array< width(Float), height(Float)>
+ *   width -> Float
  *
- * Returns the dimensions of the page.
- * The dimensions are in points, which are set to 72 per inch. (DPI)
+ * Returns the width of the page.
+ * The width is given in terms of points, which are set to 72 per inch. (DPI)
  */
 static VALUE
-page_dimensions(VALUE self)
+page_width(VALUE self)
 {
     Page *pg = getPage(self);
-    return rb_ary_new3(2, rb_float_new(pg->width()), rb_float_new(pg->height()) );
+    return rb_float_new(pg->width());
 }
+
+/*
+ * call-seq:
+ *   height -> Float
+ *
+ * Returns the height of the page.
+ * The height is given in terms of points, which are set to 72 per inch. (DPI)
+ */
+static VALUE
+page_height(VALUE self)
+{
+    Page *pg = getPage(self);
+    return rb_float_new(pg->height());
+}
+/*
+ * call-seq:
+ *   number -> Fixnum
+ *
+ * Returns the page number.  Is zero indexed, i.e. a 0 (zero) is the first page.
+  */
+static VALUE
+page_number(VALUE self)
+{
+    return INT2FIX( getPage(self)->number() );
+}
+
+
 
 /*
  call-seq:
@@ -291,6 +318,33 @@ page_render_sizes(VALUE self, VALUE path, VALUE rb_sizes)
     return pg->render( dest, sizes )  ? Qtrue : Qfalse;
 }
 
+
+static VALUE
+page_render_resize(VALUE self, VALUE path, VALUE rb_sizes)
+{
+    Page *pg = getPage(self);
+    VALUE str = rb_funcall(path, to_s, 0);
+    const char* dest = StringValuePtr(str);
+    if (TYPE(rb_sizes) != T_ARRAY){
+        return Qfalse;
+    }
+    Page::sizes_t sizes(RARRAY_LEN(rb_sizes));
+    int index = 0;
+    for (Page::sizes_t::iterator size = sizes.begin(); size != sizes.end(); ++size){
+        VALUE rb_size = rb_ary_entry(rb_sizes, index);
+        // not sure what we should do here.  Right now we'll just
+        // skip the element, but perhaps we should return false?
+        if (TYPE(rb_size) != T_ARRAY || RARRAY_LEN(rb_size) !=2 ){
+            index++;
+            continue;
+        }
+        size->first  = FIX2INT( rb_ary_entry(rb_size, 0) );
+        size->second = FIX2INT( rb_ary_entry(rb_size, 1) );
+        index++;
+    }
+    return pg->render_resize( dest, sizes )  ? Qtrue : Qfalse;
+}
+
 extern "C" void Init_pdfium_ext()
 {
     Document::Initialize();
@@ -314,9 +368,14 @@ extern "C" void Init_pdfium_ext()
     // The Page class definition and methods
     rb_page = rb_define_class_under(rb_pdfium_module, "Page", rb_cObject);
     rb_define_alloc_func     (rb_page, page_allocate);
-    rb_define_private_method (rb_page, "initialize",   RUBY_METHOD_FUNC(page_initialize),   2);
-    rb_define_method         (rb_page, "dimensions",   RUBY_METHOD_FUNC(page_dimensions),   0);
-    rb_define_method         (rb_page, "render",       RUBY_METHOD_FUNC(page_render),       3);
-    rb_define_method         (rb_page, "render_sizes", RUBY_METHOD_FUNC(page_render_sizes), 2);
+    rb_define_private_method (rb_page, "initialize",   RUBY_METHOD_FUNC(page_initialize), 2);
+    rb_define_method         (rb_page, "width",        RUBY_METHOD_FUNC(page_width),      0);
+    rb_define_method         (rb_page, "height",       RUBY_METHOD_FUNC(page_height),     0);
+    rb_define_method         (rb_page, "render",       RUBY_METHOD_FUNC(page_render),     3);
+    rb_define_method         (rb_page, "number",       RUBY_METHOD_FUNC(page_number),     0);
+
+    rb_define_method         (rb_page, "render_sizes",  RUBY_METHOD_FUNC(page_render_sizes), 2);
+    rb_define_method         (rb_page, "render_resize", RUBY_METHOD_FUNC(page_render_resize), 2);
+
 
 }

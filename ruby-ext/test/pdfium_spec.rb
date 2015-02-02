@@ -19,8 +19,6 @@ describe PDFium do
     pdf = PDFium::Document.new( pdf_path("basicapi") )
     page = pdf.page_at(0)
     assert page
-    assert page.dimensions.is_a?( Array ) # call something to make sure it works
-
     assert_raises(ArgumentError) do
       pdf.page_at(1234567)
     end
@@ -31,7 +29,6 @@ describe PDFium do
     pdf = PDFium::Document.new( pdf_path("basicapi") )
     pdf.each_page do | page |
       assert page.is_a?(PDFium::Page)
-      assert page.dimensions.is_a?( Array ) # call something to make sure it works
       called += 1
     end
     assert_equal 3, called
@@ -60,9 +57,9 @@ describe PDFium do
   it "reads page dimensions" do
     pdf = PDFium::Document.new( pdf_path("basicapi") );
     page = PDFium::Page.new(pdf,0)
-    height, width = page.dimensions
-    assert_in_delta 841.89, width
-    assert_in_delta 595.28, height
+
+    assert_in_delta 841.89, page.height
+    assert_in_delta 595.28, page.width
   end
 
   it "saves a page" do
@@ -75,8 +72,6 @@ describe PDFium do
       type = `identify #{tf}`
       assert_match( format, type)
       assert_match( "1500x2300", type)
-      #`open #{tf}`
-
     end
   end
 
