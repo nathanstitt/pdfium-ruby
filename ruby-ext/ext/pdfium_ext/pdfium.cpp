@@ -27,9 +27,11 @@ extern "C" {
 
 // file local variables that are set in Init_pdfium_ext function
 // and are referenced elsewhere in file
-static ID to_s;        // used for calling the to_s method on file paths
+static ID rb_id_to_s;       // used for calling the to_s method on file paths
 static VALUE rb_document;   // Ruby definition of the Document class
 static VALUE rb_page;  // Ruby definition of the Page class
+static VALUE rb_sym_height;
+static VALUE rb_sym_width;
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -80,7 +82,7 @@ document_allocate(VALUE klass) {
  */
 static VALUE
 document_initialize(VALUE self, VALUE _path) {
-    _path = rb_funcall(_path, to_s, 0); // call to_s in case it's a Pathname
+    _path = rb_funcall(_path, rb_id_to_s, 0); // call to_s in case it's a Pathname
     const char* path = StringValuePtr(_path);
     Document* p = getDocument(self);
     if (! p->initialize(path) ){
@@ -221,7 +223,7 @@ page_height(VALUE self)
  *   number -> Fixnum
  *
  * Returns the page number.  Is zero indexed, i.e. a 0 (zero) is the first page.
-  */
+ */
 static VALUE
 page_number(VALUE self)
 {
@@ -241,122 +243,64 @@ page_number(VALUE self)
  If either the height or width are set to 0, it will be calculated to retain
  approprate page scale
 
- Returns true for success false for failure
+ Returns true for success, false for failure
 
  === Example
     pdf = PDFium::Document.new( "test.pdf" )
-    page = PDFium::Page.new(pdf,0)
-    page.render("test-tn.png", 100, 180)
-    page.render("test-large.png", 2000, 0)
+    pdf.each_page do | page |
+        page.render("test-thumbnail-#{page.number}.png", height: 100)
+        page.render("test-full-page-#{page.number}.png", width: 1800, height: 2400)
+    end
 
  If the above page's #dimensions was 1000x1500, then the following image sizes would be generated:
 
-    test-tn.png -> 100x180 and test-large.png -> 2000x3000
+    test-thumbnail-1.png -> 100x180 and test-full-page-1.png -> 1800x2400
 
 */
 
 static VALUE
-page_render(VALUE self, VALUE path, VALUE width, VALUE height)
+page_render(int argc, VALUE *argv, VALUE self)
 {
     Page *pg = getPage(self);
-    VALUE str = rb_funcall(path, to_s, 0);
-    return pg->render( StringValuePtr(str), FIX2INT(width), FIX2INT(height) ) ? Qtrue : Qfalse;
+    VALUE rb_path, rb_options;
+    rb_scan_args(argc,argv,"1:", &rb_path, &rb_options);
+    if ( TYPE(rb_options) != T_HASH ){
+        rb_raise(rb_eTypeError, "wrong argument type %s (expected Hash)", rb_obj_classname(rb_options));
+    }
+
+    VALUE str_path      = rb_funcall(rb_path, rb_id_to_s, 0);
+    VALUE width_option  = rb_hash_aref(rb_options, rb_sym_width);
+    VALUE height_option = rb_hash_aref(rb_options, rb_sym_height);
+
+    int width  = NIL_P(width_option)  ? 0 : FIX2INT(width_option);
+    int height = NIL_P(height_option) ? 0 : FIX2INT(height_option);
+    if (!width && !height){
+        rb_raise(rb_eArgError, ":height or :width must be given");
+    }
+    return pg->render( StringValuePtr(str_path), width, height ) ? Qtrue : Qfalse;
 }
 
 
-/*
- call-seq:
-    render_sizes(file_path, Array< Array<width, height> >) -> Boolean
-
- Render a page into multiple images.  The image type
- will be auto-detected from the file_path's extension, and can be any of the
- formats supported by the FreeImage library http://freeimage.sourceforge.net/features.html
-
- The file_path must contain placeholders for the height and width, which are given as %h (height) and %w (width).
-
- The sizes are given as an Array with nested Arrays containing each height / width
-
- As in the #render method, if either the height or width are set to 0, it will be calculated to retain
- approprate page scale
-
- Returns true for success false for failure
-
- === Example
-    pdf = PDFium::Document.new( "test.pdf" )
-    page = PDFium::Page.new(pdf,0)
-    page.render_sizes("test-%hx%w.png", [ [100,100], [300,0], [500,0]]
-
- If the above page's #dimensions was 1000x1500, then the following images would be generated:
-
- test-100x100.png, test-300x450.png and test-500x750.png
-
-*/
-
-static VALUE
-page_render_sizes(VALUE self, VALUE path, VALUE rb_sizes)
-{
-    Page *pg = getPage(self);
-    VALUE str = rb_funcall(path, to_s, 0);
-    const char* dest = StringValuePtr(str);
-    if (TYPE(rb_sizes) != T_ARRAY){
-        return Qfalse;
-    }
-    Page::sizes_t sizes(RARRAY_LEN(rb_sizes));
-    int index = 0;
-    for (Page::sizes_t::iterator size = sizes.begin(); size != sizes.end(); ++size){
-        VALUE rb_size = rb_ary_entry(rb_sizes, index);
-        // not sure what we should do here.  Right now we'll just
-        // skip the element, but perhaps we should return false?
-        if (TYPE(rb_size) != T_ARRAY || RARRAY_LEN(rb_size) !=2 ){
-            index++;
-            continue;
-        }
-        size->first  = FIX2INT( rb_ary_entry(rb_size, 0) );
-        size->second = FIX2INT( rb_ary_entry(rb_size, 1) );
-        index++;
-    }
-    return pg->render( dest, sizes )  ? Qtrue : Qfalse;
-}
-
-
-static VALUE
-page_render_resize(VALUE self, VALUE path, VALUE rb_sizes)
-{
-    Page *pg = getPage(self);
-    VALUE str = rb_funcall(path, to_s, 0);
-    const char* dest = StringValuePtr(str);
-    if (TYPE(rb_sizes) != T_ARRAY){
-        return Qfalse;
-    }
-    Page::sizes_t sizes(RARRAY_LEN(rb_sizes));
-    int index = 0;
-    for (Page::sizes_t::iterator size = sizes.begin(); size != sizes.end(); ++size){
-        VALUE rb_size = rb_ary_entry(rb_sizes, index);
-        // not sure what we should do here.  Right now we'll just
-        // skip the element, but perhaps we should return false?
-        if (TYPE(rb_size) != T_ARRAY || RARRAY_LEN(rb_size) !=2 ){
-            index++;
-            continue;
-        }
-        size->first  = FIX2INT( rb_ary_entry(rb_size, 0) );
-        size->second = FIX2INT( rb_ary_entry(rb_size, 1) );
-        index++;
-    }
-    return pg->render_resize( dest, sizes )  ? Qtrue : Qfalse;
-}
 
 extern "C" void Init_pdfium_ext()
 {
+    // Initialize the PDFium library
     Document::Initialize();
-    to_s = rb_intern ("to_s");
 
-    // Get symbol for PDFium
-    ID sym_pdfium = rb_intern("PDFium");
-    // Get the module
-    VALUE rb_pdfium_module = rb_const_get(rb_cObject, sym_pdfium);
+    // set the globals that we use for access
+    rb_id_to_s = rb_intern ("to_s");
+    rb_sym_width  = ID2SYM(rb_intern("width"));
+    rb_sym_height = ID2SYM(rb_intern("height"));
+
+    // Get the PDFium Module
+    VALUE rb_pdfium_module = rb_const_get(rb_cObject, rb_intern("PDFium"));
+
+    // This is not used and will not be compiled.
+    // a rb_define_module needs to be present in this file for RDoc
 #if RDOC_CAN_PARSE_DOCUMENTATION
     rb_pdfium_module = rb_define_module("PDFium");
 #endif
+
     // The Document class definition and methods
     rb_document = rb_define_class_under(rb_pdfium_module,"Document",  rb_cObject);
     rb_define_alloc_func(rb_document, document_allocate);
@@ -371,11 +315,7 @@ extern "C" void Init_pdfium_ext()
     rb_define_private_method (rb_page, "initialize",   RUBY_METHOD_FUNC(page_initialize), 2);
     rb_define_method         (rb_page, "width",        RUBY_METHOD_FUNC(page_width),      0);
     rb_define_method         (rb_page, "height",       RUBY_METHOD_FUNC(page_height),     0);
-    rb_define_method         (rb_page, "render",       RUBY_METHOD_FUNC(page_render),     3);
+    rb_define_method         (rb_page, "render",       RUBY_METHOD_FUNC(page_render),    -1);
     rb_define_method         (rb_page, "number",       RUBY_METHOD_FUNC(page_number),     0);
-
-    rb_define_method         (rb_page, "render_sizes",  RUBY_METHOD_FUNC(page_render_sizes), 2);
-    rb_define_method         (rb_page, "render_resize", RUBY_METHOD_FUNC(page_render_resize), 2);
-
 
 }
