@@ -1,2 +1,9 @@
-gem "docsplit", github: 'documentcloud/docsplit', branch: 'master'
-gem "rusage"
+source 'https://rubygems.org'
+
+# Specify your gem's dependencies in pdfium.gemspec
+gemspec
+
+
+group :development do
+
+end
