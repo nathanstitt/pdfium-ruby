@@ -1,50 +1,68 @@
-# The Ruby gem currently supports all features discussed
+# Ruby bindings for Google's PDFium project
 
-The Debian package currently copies:
+This allows Ruby efficiently to extract information from PDF files.
 
-  * Header files from fpdfsdk/include to /usr/include/pdfium
-  * Header files from v8/include/* to /usr/include/pdfium/v8
-  * All of the static libraries from out/Release/*.a  to /usr/lib/pdfium
-  * The test application from out/Release/pdfium_test to /usr/bin/pdfium_test
+It currently has only very rudimantary PDF editing capabilities.
 
-To build the deb run:
+RDoc documentation is also available and the test directory has examples of usage.
 
-    mkdir pdfium-deb
-    cd pdfium-deb
-    git clone https://pdfium.googlesource.com/pdfium.git pdfium-0.1+git20150128
-    cd git pdfium-0.1+git20150128
+## Open and saveing
 
-    svn co http://gyp.googlecode.com/svn/trunk build/gyp
-    svn co http://v8.googlecode.com/svn/trunk v8
-    svn co https://src.chromium.org/chrome/trunk/deps/third_party/icu46 v8/third_party/icu
+```ruby
+pdf = PDFium::Document.new("test.pdf")
+pdf.save
+```
 
-    cd ..
-    tar czf pdfium-0.1+git20150128.gz pdfium-0.1+git20150128
+## Document information
 
-    dh_make -c BSD -e nathan@stitt.org -f ../pdfium-0.1+git20150128.gz
-    (select library type)
+Page count:
+```ruby
+pdf.page_count
+```
 
-    cp <debian-config>/rules ./debian/
-    cp <debian-config>/control ./debian/
-    cp <debian-config>/libpdfium-dev.install ./debian/
-    cp -r <debian-config>/patches ./debian/
-    cp <debian-config>/changelog ./debian/
-    (edit changelog if needed)
+PDF Metadata:
+```ruby
+pdf.metadata
+```
 
-    dpkg-buildpackage
-    (if lacking gpg keys, append "-us -uc" flags to dpkg-buildpackage)
-
-To upload:
-
-    dput  ppa:nathan-stitt/pdfium pdfium_0.1+git20150128-1_amd64.changes
-
-To bump version:
-
-    debchange -i
-    dh_make --createorig
-    dpkg-buildpackage -us -uc
+Returns a hash with keys = :title, :author :subject, :keywords, :creator, :producer, :creation_date, :mod_date
 
 
-Results of a run from the benchmarking script:
 
-https://raw.githubusercontent.com/nathanstitt/pdfium-build/master/ruby-ext/test/benchmark-run.txt
+## Bookmarks
+
+```ruby
+def print_bookmarks(list, indent=0)
+    list.bookmarks.each do | bm |
+        print ' ' * indent
+        puts bm.title
+        print_marks( bm.children )
+    end
+end
+print_bookmarks( pdf.bookmarks )
+```
+
+## Render page as an image
+
+```ruby
+pdf.each_page | page |
+    page.as_image(width: 800).save("test-{page.number}.png")
+end
+```
+
+## Extract embedded images from page
+```ruby
+doc = PDFium::Document.new("test.pdf")
+page = doc.page_at(0)
+page.images do |image|
+    img.save("page-0-image-#{image.index}.png")
+end
+```
+
+## Text access
+
+Text is returned as a UTF-16LE encoded string.  Future version may return position information as well
+
+```ruby
+pdf.page_at(0).text.encode!("ASCII-8BIT")
+```

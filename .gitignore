@@ -5,8 +5,5 @@ Gemfile.lock
 *.o
 *.a
 mkmf.log
-ruby-ext/tmpg
-c++-test/pdfium
-c++-test/gctest
-ruby-ext/tmp
-ruby-ext/test/pdfs
+tmp
+test/pdfs

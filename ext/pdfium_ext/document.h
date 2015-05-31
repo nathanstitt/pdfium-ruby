@@ -1,14 +1,9 @@
 #ifndef __DOCUMENT_H__
 #define __DOCUMENT_H__
 
-#include <iostream>
-#include "fpdf_ext.h"
-#include "document.h"
-#include "page.h"
-#include <unordered_set>
+#include "pdfium.h"
 
-
-// https://redmine.ruby-lang.org/issues/6292
+/* // https://redmine.ruby-lang.org/issues/6292 */
 
 // Ruby will call dispose of the Page and DOCUMENT objects in whatever order it
 // wishes to.  This is problematic for PDFium.  If a Document object is closed whie
@@ -32,40 +27,40 @@
 // and not as part of an array (not new[]).
 //
 
-class Document {
+/* class Document { */
 
-  public:
-    static void Initialize();
+/*   public: */
+/*     static void Initialize(); */
 
-    // an empty constructor. Ruby's allocate object doesn't have any arguments
-    // so the Document allocation needs to function in the same manner
-    Document();
+/*     // an empty constructor. Ruby's allocate object doesn't have any arguments */
+/*     // so the Document allocation needs to function in the same manner */
+/*     Document(); */
 
-    bool initialize(const char* file);
+/*     bool initialize(const char* file); */
 
-    bool isValid();
+/*     bool isValid(); */
 
-    int pageCount();
+/*     int pageCount(); */
 
-    //    Page* getPage(int page_index);
-    void retain(Page* page);
-    void release(Page* page);
+/*     //    Page* getPage(int page_index); */
+/*     void retain(Page* page); */
+/*     void release(Page* page); */
 
-    void markUnused();
+/*     void markUnused(); */
 
-    FPDF_DOCUMENT pdfiumDocument();
+/*     FPDF_DOCUMENT pdfiumDocument(); */
 
-    ~Document();
+/*     ~Document(); */
 
-  private:
+/*   private: */
 
 
-    std::unordered_set<Page*> _pages;
-    bool _in_use;
-    FPDF_DOCUMENT _document;
-    void maybeKillSelf();
+/*     std::unordered_set<Page*> _pages; */
+/*     bool _in_use; */
+/*     FPDF_DOCUMENT _document; */
+/*     void maybeKillSelf(); */
 
-};
+/* }; */
 
 
 #endif // __DOCUMENT_H__

@@ -3,5 +3,5 @@ guard :minitest do
 end
 
 guard 'rake', :task => 'buildtest' do
-    watch %r{ext/pdfium_ext/.*\.(cpp|h)$}
+    watch %r{ext/pdfium_ext/.*\.(cc|h)$}
 end

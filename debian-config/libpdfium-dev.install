@@ -1,4 +1,0 @@
-out/Release/*.a usr/lib/pdfium
-fpdfsdk/include/* usr/include/pdfium
-v8/include/* usr/include/pdfium/v8
-out/Release/pdfium_test usr/bin

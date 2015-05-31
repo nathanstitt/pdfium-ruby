@@ -5,12 +5,12 @@ require 'pdfium/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "pdfium"
-  spec.version       = Pdfium::VERSION
-  spec.authors       = ["Nathan Stitt"]
+  spec.version       = PDFium::VERSION
+  spec.authors       = ["Nathan Stitt", "Ted Han"]
   spec.email         = ["nathan@stitt.org"]
-  spec.summary       = %q{PDFium test}
-  spec.description   = %q{PDFium test gem, nothing much to say atm}
-  spec.homepage      = ""
+  spec.summary       = %q{Ruby bindings for Google's PDFium project}
+  spec.description   = %q{Ruby bindings for Google's PDFium project.  It supports extracting text and images from PDF's as well as rendering pages to bitmaps}
+  spec.homepage      = "https://github.com/nathanstitt/pdfium-ruby"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")
@@ -23,5 +23,7 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "guard-minitest"
   spec.add_development_dependency "guard-rake"
+  spec.add_development_dependency "fastimage"
+  spec.add_development_dependency "image_science"
   spec.add_development_dependency "rake-compiler"
 end

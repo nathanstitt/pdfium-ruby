@@ -7,10 +7,15 @@ Rake::TestTask.new do |t|
     t.pattern = "test/*_spec.rb"
 end
 
-RDOC_FILES = FileList["README.md", "ext/pdfium_ext/pdfium.cpp"]
+RDOC_FILES = FileList["README.md",
+                      "lib/pdfium.rb",
+                      "lib/pdfium/*.rb",
+                      "ext/pdfium_ext/*.cc"
+                     ]
 Rake::RDocTask.new do |rd|
-  rd.main = "README.md"
-  rd.rdoc_files.include(RDOC_FILES)
+    rd.main = "README.md"
+    rd.options << "--verbose"
+    rd.rdoc_files.include(RDOC_FILES)
 end
 
 
@@ -18,11 +23,19 @@ require "bundler/gem_tasks"
 
 require "rake/extensiontask"
 Rake::ExtensionTask.new("pdfium_ext") do | ext |
-  ext.source_pattern = "*.cpp"
+  ext.source_pattern = "*.cc"
 end
 
 task :buildtest => :compile do
     Rake::Task["test"].invoke
+end
+
+task :console do
+  require 'irb'
+  require 'irb/completion'
+  require 'pdfium'
+  ARGV.clear
+  IRB.start
 end
 
 # valgrind and Ruby
