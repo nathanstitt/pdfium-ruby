@@ -4,7 +4,15 @@ This allows Ruby efficiently to extract information from PDF files.
 
 It currently has only very rudimantary PDF editing capabilities.
 
-RDoc documentation is also available and the test directory has examples of usage.
+[API Documentation](http://www.rubydoc.info/gems/pdfium/) is also available and the test directory has examples of usage.
+
+## Installing
+
+The gem requires both the PDFium and freeimage libraries.
+
+An [Ubuntu PPA](https://launchpad.net/~nathan-stitt/+archive/ubuntu/pdfium) is available for PDFium.
+
+Freeimage should be installable via system packages.
 
 ## In memory render and extraction
 
