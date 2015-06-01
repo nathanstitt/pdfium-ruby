@@ -5,53 +5,36 @@ def existing(dirs)
   dirs.select{|dir| Dir.exist?(dir) }
 end
 
-LIB_DIRS=[]
-# if ENV['PDFIUM']
-#     LIB_DIRS    = [ "#{ENV['PDFIUM']}/out/Debug/lib.target" ]
-#     HEADER_DIRS = [
-#       "#{ENV['PDFIUM']}/fpdfsdk/include",
-#       "#{ENV['PDFIUM']}/core/include",
-#       "#{ENV['PDFIUM']}"
-#     ]
 
-# else
-#     LIB_DIRS = [
-#       "/usr/local/lib/pdfium",
-#       "/usr/lib/pdfium"
-#     ]
+if ENV['PDFIUM']
+    LIB_DIRS    = [ "#{ENV['PDFIUM']}/out/Debug/lib.target" ]
+    HEADER_DIRS = [
+      "#{ENV['PDFIUM']}/public",
+      "#{ENV['PDFIUM']}/core/include",
+      "#{ENV['PDFIUM']}"
+    ]
 
-#     HEADER_DIRS = [
-#       "/usr/include/pdfium",
-#       "/usr/local/include/pdfium",
-#       "/usr/local/include/pdfium/fpdfsdk/include",
-#       "/usr/local/include/pdfium/core/include"
-#     ]
-# end
+else
+    LIB_DIRS = [
+        "/usr/local/lib/pdfium",
+        "/usr/lib/pdfium"
+    ]
 
-HEADER_DIRS=[
-    "/home/nas/pdfium/deb-package/pdfium/fpdfsdk/include",
-    "/home/nas/pdfium/deb-package/pdfium/core/include",
-    "/home/nas/pdfium/deb-package/pdfium"
-]
+    HEADER_DIRS = [
+        "/usr/include/pdfium",
+        "/usr/include/pdfium/core/include",
+        "/usr/local/include/pdfium",
+        "/usr/local/include/pdfium/core/include"
+    ]
+end
 
 have_library('pthread')
 
-DEBUG = ENV['DEBUG'] == '1'
+DEBUG = ENV['DEBUG']
 
 $CPPFLAGS += " -Wall "
-$CPPFLAGS += " -g" #if DEBUG
+$CPPFLAGS += " -g" if DEBUG
 
-# The order that the libs are listed matters for Linux!
-# to debug missing symbols you can run:
-#    for l in `ls /usr/lib/pdfium/*.a`; do echo $l; nm $l | grep '<missing symbol>'; done
-# The listing with a "T" contains the symbol, the ones with a "U"
-# depend on it.  The "U" libs must come after the "T"
-# LIBS=%w{
-#   javascript bigint     freetype fpdfdoc     fpdftext        formfiller  icudata    icuuc
-#   icui18n    v8_libbase v8_base  v8_snapshot v8_libplatform  jsapi       pdfwindow  fxedit
-#   fxcrt      fxcodec    fpdfdoc  fdrm fxge   fpdfapi         freetype    pdfium
-#   pthread    freeimage
-# }
 LIBS=%w{pdfium freeimage}
 
 dir_config("libs", existing(HEADER_DIRS), existing(LIB_DIRS))

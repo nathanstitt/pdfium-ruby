@@ -3,20 +3,17 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
-#include <fpdf_dataavail.h>
-#include <fpdf_ext.h>
-#include <fpdfformfill.h>
-#include <fpdftext.h>
-#include <fpdfview.h>
-#include <fpdfedit.h>
-#include <fpdfsave.h>
-#include <fpdfdoc.h>
 #include <iostream>
-#include <fpdfdoc/fpdf_doc.h>
 
-#include <fpdfapi/fpdf_render.h>
+#include <fpdf_doc.h>
+#include <fpdf_save.h>
+#include <fpdf_edit.h>
+#include <fpdf_text.h>
+#include <fpdfdoc/fpdf_doc.h>
+#include <fpdfapi/fpdf_page.h>
 #include <fpdfapi/fpdf_pageobj.h>
-#include <fpdfsdk/include/fsdk_rendercontext.h>
+#include <fpdftext/fpdf_text.h>
+
 #include <FreeImage.h>
 
 #include "page_wrapper.h"
