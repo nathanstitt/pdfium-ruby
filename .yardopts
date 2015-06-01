@@ -1,0 +1,3 @@
+lib/pdfium*
+ext/pdfium_ext/*.cc
+--no-private

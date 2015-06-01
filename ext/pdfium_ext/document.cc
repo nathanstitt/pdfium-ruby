@@ -10,14 +10,8 @@
 #include "buffer_file_write.hpp"
 
 /////////////////////////////////////////////////////////////////////////
-// The Document class                                                       //
+// The Document class                                                  //
 /////////////////////////////////////////////////////////////////////////
-/*
-    * Document-class:  PDFium::Document
-    *
-    * A Document represents a PDF file.
-    *
-*/
 
 
 // While you might think this would free the Document object it does not
@@ -74,7 +68,7 @@ document_initialize(int argc, VALUE *argv, VALUE self)
  *
  * Initializes a document from a binary string.
  *
- * See Image#data for an example of reading a PDF directly from Amazon S3
+ * See {PDFium::Image#data} for an example of reading a PDF directly from Amazon S3
  * and writing it's images completely in memory.
  */
 static VALUE
@@ -86,8 +80,8 @@ document_from_memory(VALUE klass, VALUE data){
 }
 
 /*
- * call-seq:
- *   page_count -> Fixnum
+ * @overload page_count
+ * page_count -> Fixnum
  *
  * Returns the number of pages on a Document
  */
@@ -98,7 +92,9 @@ document_page_count(VALUE self)
 }
 
 // Not documented in favor of the Document#pages[] access
-/* :nodoc: */
+/*
+  @private
+ */
 static VALUE
 document_page_at(VALUE self, VALUE rb_page_index)
 {
@@ -107,7 +103,8 @@ document_page_at(VALUE self, VALUE rb_page_index)
 
 /*
  * call-seq:
- *   pages -> PDFium::PageList
+ *   pages
+ * @return {PDFium::PageList}
  *
  * Returns a collection of all the pages on the document as a PDFium::PageList. Pages
  * are lazily loaded.
@@ -123,7 +120,7 @@ document_pages(VALUE self)
 
 // creates and yields a page.  Not documented since all access
 // should got through the Pageist interface via the Document#pages method
-/* :nodoc: */
+/* @private */
 static VALUE
 document_each_page(VALUE self)
 {
@@ -143,7 +140,9 @@ document_each_page(VALUE self)
 
 /*
  * call-seq:
- *   bookmarks -> Bookmarks
+ *   bookmarks
+ *
+ * @return {PDFium::BookmarkList}
  *
  * Retrieves the first Bookmark for a document
  */
@@ -160,13 +159,14 @@ document_bookmarks(VALUE self)
 
 
 
-
 /*
  * call-seq:
- *   save -> Document
+ *   save(file)
  *
- * Saves document to a PDF file.  This method isn't terribly useful since there aren't
- * (yet) methods to add content to pages.
+ * @param file [String, Pathname] path to save the file to
+ * @return [Boolean] indicating success or failure
+ *
+ * Retrieves the first Bookmark for a document
  */
 static VALUE
 document_save(VALUE self, VALUE _path)
@@ -244,13 +244,13 @@ document_metadata(int argc, VALUE *argv, VALUE self)
     return metadata;
 }
 
-VALUE
+void
 define_document_class()
 {
-    VALUE RB_PDFium = RB::PDFium();
+    VALUE PDFium = RB::PDFium();
 
     // The Document class definition and methods
-    VALUE RB_Document = rb_define_class_under(RB_PDFium, "Document",  rb_cObject);
+    VALUE RB_Document = rb_define_class_under(PDFium, "Document",  rb_cObject);
 
     rb_define_alloc_func(RB_Document, document_allocate);
 

@@ -1,4 +1,7 @@
 .bundle
+.yardoc
+doc
+pkg
 Gemfile.lock
 *.bundle
 *.so

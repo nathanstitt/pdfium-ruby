@@ -200,15 +200,12 @@ bookmark_destination(VALUE self)
     return hash;
 }
 
-VALUE
+void
 define_bookmark_class(){
 
-#if RDOC_IS_STUPID_AND_CANNOT_PARSE_DOCUMENTATION
-    VALUE RB_PDFium = rb_define_module("PDFium");
-#endif
-    VALUE RB_PDFium = RB::PDFium();
+    VALUE PDFium = RB::PDFium();
 
-    VALUE RB_Bookmark = rb_define_class_under(RB_PDFium, "Bookmark",  rb_cObject);
+    VALUE RB_Bookmark = rb_define_class_under(PDFium, "Bookmark",  rb_cObject);
     rb_define_alloc_func(RB_Bookmark, bookmark_allocate);
 
     rb_define_private_method (RB_Bookmark, "initialize",   RUBY_METHOD_FUNC(bookmark_initialize),  1);
@@ -217,5 +214,4 @@ define_bookmark_class(){
     rb_define_method         (RB_Bookmark, "children",     RUBY_METHOD_FUNC(bookmark_children),    0);
     rb_define_method         (RB_Bookmark, "destination",  RUBY_METHOD_FUNC(bookmark_destination), 0);
 
-    return RB_Bookmark;
 }

@@ -35,10 +35,10 @@ extern "C" {
 #define DEBUG_MSG(str) do { } while ( false )
 #endif
 
-VALUE define_bookmark_class();
-VALUE define_document_class();
-VALUE define_page_class();
-VALUE define_image_class();
+void define_bookmark_class();
+void define_document_class();
+void define_page_class();
+void define_image_class();
 
 // a utility method to extract the reference to the FPDF_DOCUMENT from the Ruby/C++ wrapping
 

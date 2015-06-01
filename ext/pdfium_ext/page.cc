@@ -22,8 +22,7 @@ static VALUE rb_sym_width;
 
 /*
     * Document-class:  PDFium::Page
-    *
-    * A Page on a PDF Document
+    * A Page on a PDFium::Document
 */
 static void
 page_gc_free(PageWrapper* page)
@@ -360,18 +359,18 @@ page_each_image(VALUE self)
 }
 
 
-VALUE
+
+void
 define_page_class()
 {
     rb_sym_width  = ID2SYM(rb_intern("width"));
     rb_sym_height = ID2SYM(rb_intern("height"));
 
-    VALUE RB_PDFium = RB::PDFium();
-
-    // The Page class definition and methods
-    VALUE RB_Page = rb_define_class_under(RB_PDFium, "Page", rb_cObject);
-    //rb_define_alloc_func     (RB_Page, page_allocate);
-    //rb_define_private_method (RB_Page, "initialize",   RUBY_METHOD_FUNC(page_initialize), -1);
+    VALUE PDFium = RB::PDFium();
+    /*
+     The Page class definition and methods
+     */
+    VALUE RB_Page = rb_define_class_under( PDFium, "Page", rb_cObject);
 
     rb_define_singleton_method(RB_Page, "new",    RUBY_METHOD_FUNC(page_new),    0);
     rb_define_singleton_method(RB_Page, "open",   RUBY_METHOD_FUNC(page_open),   2);
@@ -388,5 +387,5 @@ define_page_class()
 
     rb_define_method         (RB_Page, "each_image", RUBY_METHOD_FUNC(page_each_image), 0);
 
-    return RB_Page;
+
 }

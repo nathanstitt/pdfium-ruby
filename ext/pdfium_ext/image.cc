@@ -9,9 +9,9 @@
     * Document-class:  PDFium::Image
     *
     * A Image can represent either a Page that
-    * has been rendered to a Image via Page#as_image
+    * has been rendered to a Image via {PDFium::Page#as_image}
     *
-    * Or an embedded image on a Page, obtained via Page#images
+    * Or an embedded image on a {PDFium::Page}, obtained via {PDFium::Page#images}
 */
 
 
@@ -215,10 +215,14 @@ image_as_science(VALUE self){
 }
 
 /*
- * call-seq:
- *   save( file ) -> Boolean
- *
- * Save image to a file
+ call-seq:
+   save( file )
+
+ Save image to a file
+
+ @param file [String, Pathname] path to file to save image to
+ @return [Boolean] indicating success or failure
+
  */
 VALUE
 image_save(VALUE self, VALUE rb_file){
@@ -242,9 +246,10 @@ image_save(VALUE self, VALUE rb_file){
 
 /*
  call-seq:
-   data(:format) -> Binary String
+   data(:format)
 
- Returns the binary data for the image in the specified format.
+ @param format [symbol] any file extension recogized by FreeImage.
+ @return String containing binary data for the image in the specified format.
 
  Used in conjuction with Document.from_memory this can render be used to
  render a PDF's pages completely in memory.
@@ -301,16 +306,15 @@ image_data(VALUE self, VALUE rb_format)
     return ret;
 }
 
-VALUE
+void
 define_image_class(){
-    VALUE RB_PDFium = RB::PDFium();
+    VALUE PDFium = RB::PDFium();
+    VALUE RB_Image = rb_define_class_under(PDFium, "Image",  rb_cObject);
 
-
-    VALUE RB_Image = rb_define_class_under(RB_PDFium, "Image",  rb_cObject);
     rb_define_alloc_func(RB_Image, image_allocate);
     rb_define_private_method (RB_Image, "initialize",   RUBY_METHOD_FUNC(image_initialize),  -1);
 
-    /* Returns the bouding box of the image as a PDFium::BoundingBox */
+    /* Returns the bouding box of the image as a {PDFium::BoundingBox} */
     rb_define_attr( RB_Image, "bounds", 1, 0 );
 
     /* Returns the index of the image on the page.
