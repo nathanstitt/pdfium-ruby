@@ -264,5 +264,4 @@ define_document_class()
     rb_define_method         (RB_Document, "metadata",   RUBY_METHOD_FUNC(document_metadata),   -1);
     rb_define_method         (RB_Document, "bookmarks",  RUBY_METHOD_FUNC(document_bookmarks),   0);
     rb_define_method         (RB_Document, "save",       RUBY_METHOD_FUNC(document_save),        1);
-    return RB_Document;
 }

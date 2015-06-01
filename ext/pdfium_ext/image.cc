@@ -332,5 +332,5 @@ define_image_class(){
     rb_define_method( RB_Image, "save", RUBY_METHOD_FUNC(image_save), 1);
     rb_define_method( RB_Image, "data", RUBY_METHOD_FUNC(image_data), 1);
     rb_define_method( RB_Image, "as_science", RUBY_METHOD_FUNC(image_as_science),0);
-    return RB_Image;
+
 }
