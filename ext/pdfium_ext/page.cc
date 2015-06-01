@@ -337,9 +337,10 @@ page_each_image(VALUE self)
     PageWrapper *pw;
     Data_Get_Struct(self, PageWrapper, pw);
 
-    auto count = pw->page()->CountObjects();
+    unsigned int count = pw->page()->CountObjects();
     int image_index=0;
-    for (int index=0; index < count; index++){
+
+    for (unsigned int index=0; index < count; index++){
         CPDF_PageObject *object = pw->page()->GetObjectByIndex(index);
         if ( PDFPAGE_IMAGE == object->m_Type ){
             VALUE args[2];
