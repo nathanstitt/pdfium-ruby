@@ -6,6 +6,33 @@ It currently has only very rudimantary PDF editing capabilities.
 
 RDoc documentation is also available and the test directory has examples of usage.
 
+## In memory render and extraction
+
+```ruby
+# Assuming AWS::S3 is already authorized elsewhere
+bucket = AWS::S3.new.buckets['my-pdfs']
+
+pdf = PDFium::Document.from_memory bucket.objects['secrets.pdf'].read
+pdf.pages.each do | page |
+
+  # render the complete page as a PNG with the height locked to 1000 pixels
+  # The width will be calculated to maintain the proper aspect ratio
+  path = "secrets/page-#{page.number}.png"
+  bucket.objects[path].write page.as_image(height: 1000).data(:png)
+
+  # extract and save each embedded image as a PNG
+  page.images.each do | image |
+    path = "secrets/page-#{page.number}-image-#{image.index}.png"
+    bucket.objects[path].write image.data(:png)
+  end
+
+  # Extract text from page.  Will be encoded as UTF-16LE by default
+  path = "secrets/page-#{page.number}-text.txt"
+  bucket.objects[path].write page.text
+
+end
+```
+
 ## Open and saveing
 
 ```ruby
@@ -26,7 +53,6 @@ pdf.metadata
 ```
 
 Returns a hash with keys = :title, :author :subject, :keywords, :creator, :producer, :creation_date, :mod_date
-
 
 
 ## Bookmarks
