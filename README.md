@@ -1,3 +1,5 @@
+# UNMAINTAINED
+
 # Ruby bindings for Google's PDFium project
 
 This allows Ruby efficiently to extract information from PDF files.
